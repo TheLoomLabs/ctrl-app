@@ -34,6 +34,9 @@ with our firmware fork,
   while a chosen button (e.g. L2) is held.
 - **Smoothing** for slow movements and **tightening** against small hand
   tremor. Fast movements are not affected.
+- **Shot shake suppression**: pulling a trigger or pressing any button jolts
+  the controller; that jolt is damped for a short time so aim stays on target.
+  See [the guide, section 10](docs/gyro-acceleration.md#10-shot-shake-suppression).
 - **Player space** gyro: turning follows real-world "up", however the controller
   is tilted (experimental).
 

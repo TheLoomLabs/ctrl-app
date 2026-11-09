@@ -176,6 +176,7 @@ notice inconsistent tracking, e.g. over- or undershooting a running enemy.
 | **Aim-down-sights** | Button **L2**, sensitivity **70%**, acceleration **Off** | Scoped aim stays pure and precise; acceleration only for hip-fire and turning. |
 | **Smoothing below** | **5 °/s**, time **60 ms** | Removes hand tremor when holding still; fast movement unaffected. |
 | **Tightening below** | **2 °/s** | Tiny unintended movements barely move the camera. |
+| **Shot shake suppression** | **80 ms**, below **30 °/s** | Pulling R2 (or any button) jolts the controller; the jolt is damped instead of jerking your aim off target. Flicks still pass. |
 | **Gyro space** | **Player space** (experimental) | Turning follows real-world "up", however you tilt the controller. Not yet verified on hardware; use *Local* if turns feel weak or reversed. |
 | **Polling rate** (Advanced settings) | **1000 Hz** (USB) | Smoother output; sensitivity is normalized, so feel is unchanged. |
 
@@ -218,6 +219,7 @@ Change **one value at a time** and test in game after each change.
 | Overshoot on quick re-aims (100–200 °/s) | Boost starts too early | Raise *starts at* and *full gain at* |
 | Scoped aim too fast | Acceleration active while aiming | Set an aim-down-sights button with acceleration Off |
 | Small shaking when holding still | Hand tremor, not acceleration | Use smoothing (5 °/s) and tightening (1–3 °/s) |
+| Aim jumps off target the moment you shoot | Trigger pull jolts the controller | Turn on *shot shake suppression* (60 – 100 ms, 30 °/s), see section 10 |
 | Fast turns also jerk the camera up or down | Vertical gets the full boost | Lower *vertical acceleration* (30 – 60%) |
 | Very fast flicks don't turn further than fast ones | Sensor limit (~570 °/s) | Expected; raise high-speed gain instead of flicking harder |
 
@@ -236,6 +238,10 @@ Change **one value at a time** and test in game after each change.
   re-engaging never causes a jump.
 - Everything is normalized to real time: 250, 500 and 1000 Hz polling feel the
   same.
+- Shot shake suppression starts on any press or release of a button on the
+  IO expanders (every button except Home). Movement below the set speed is
+  scaled by (speed / threshold)², and the threshold fades to zero by the end
+  of the window. It runs before acceleration, so a jolt never gets boosted.
 
 ---
 
@@ -333,3 +339,61 @@ without calibrating again.
 They work on top as before: aim-down-sights sensitivity multiplies the
 ratio, vertical acceleration reduces only the acceleration boost. If the game
 has its own zoom / ADS sensitivity multiplier, that applies too.
+
+---
+
+## 10. Shot shake suppression
+
+### What it is
+
+Pulling a trigger or pressing a button moves the controller a tiny bit. The
+gyro cannot tell that jolt apart from aiming, so the crosshair jerks off target
+at the exact moment you shoot.
+
+Shot shake suppression watches the buttons. Right after any button is
+**pressed or released** (every button except Home), it damps **slow**
+movement for a short time:
+
+- **Shot shake suppression (ms)**: how long the damping lasts after each press
+  or release. 0 turns it off.
+- **Suppress shake below (°/s)**: only movement slower than this is damped.
+  A jolt is small and short, so it falls under this speed. Fast, deliberate
+  movement (a flick, a quick re-aim) is above it and passes untouched.
+
+The damping is strongest right after the press and fades out over the window,
+so there is no sudden change when it ends. The slower a movement is, the more
+it is damped: a tiny jolt almost disappears, a movement close to the set speed
+is barely touched.
+
+Start with **80 ms** and **30 °/s**.
+
+### "Sticky" aim: the side effect to watch for
+
+The controller cannot know whether a slow movement is a jolt or you. If you
+start a slow, careful correction during the window (e.g. following a moving
+target right after a shot), part of it is damped too. For a split second the
+camera moves less than your hand, then catches up, as if the crosshair is
+glued in place for a moment. That is what "sticky" means.
+
+It shows up most with **rapid fire**: every shot starts a new window, so slow
+tracking while holding the trigger is damped again and again.
+
+### Tuning
+
+Test both: hip-fire at a still target, and track a moving target while
+shooting.
+
+| What you feel | Change |
+|---|---|
+| Aim still jumps when you shoot | Raise the **speed** (e.g. 30 → 45 °/s) or the **time** (e.g. 80 → 120 ms) |
+| Aim feels glued or slow right after a shot | Lower the **speed** (e.g. 30 → 15 °/s): slow corrections pass again, only tiny jolts are damped |
+| Aim catches up late after a shot | Lower the **time** (e.g. 80 → 40 ms): the damping ends sooner |
+| Neither | Keep it |
+
+Tips:
+
+- The speed setting matters more than the time. A gentle trigger pull may need
+  only 10 – 20 °/s; a hard press on a loose grip may need 40 °/s or more.
+- If you use rapid fire (repeat macros) a lot, keep the speed low.
+- Pressing your aim-down-sights button counts as a press too, so the first
+  moment of aiming in is also steadied.

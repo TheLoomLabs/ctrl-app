@@ -506,7 +506,7 @@ export class SectionComponent {
     return names.filter(([key]) => pins[key] !== undefined).map(([key, label]) => ({value: pins[key] as number, label}))
   }
 
-  gyroSetRaw(gyro: CtrlGyro, key: 'ads_engage' | 'ads_sens' | 'tighten' | 'smooth_threshold' | 'smooth_time' | 'space', value: number) {
+  gyroSetRaw(gyro: CtrlGyro, key: 'ads_engage' | 'ads_sens' | 'tighten' | 'smooth_threshold' | 'smooth_time' | 'space' | 'shot_time' | 'shot_threshold', value: number) {
     gyro[key] = Math.max(0, Math.min(255, Math.round(Number(value))))
     this.save()
   }

@@ -893,6 +893,31 @@ Copyright (C) 2023, Input Labs Oy.
             </div>
         </div>
 
+        <!-- Shot shake suppression (fork extension). -->
+        <div class='block'>
+            <div class='subtitle'>
+                Shot shake suppression:
+                <div class='material' (click)='showDialogHelp("gyro-shot-shake")'>live_help</div>
+            </div>
+            <div class='island'>
+                <app-input-number
+                    [value]='gyro.shot_time'
+                    (update)='gyroSetRaw(gyro, "shot_time", $event)'
+                    [unit]="'ms'" [min]='0' [max]='250' [step]='10'
+                />
+            </div>
+        </div>
+        <div class='block' *ngIf='gyro.shot_time > 0'>
+            <div class='subtitle'>Suppress shake below:</div>
+            <div class='island'>
+                <app-input-number
+                    [value]='gyro.shot_threshold || 30'
+                    (update)='gyroSetRaw(gyro, "shot_threshold", $event)'
+                    [unit]="'deg/s'" [min]='5' [max]='120' [step]='5'
+                />
+            </div>
+        </div>
+
         <!-- Aim-down-sights (fork extension). -->
         <div class='block'>
             <div class='subtitle'>
@@ -1354,6 +1379,19 @@ Copyright (C) 2023, Input Labs Oy.
         <h3>Tightening</h3>
         <p>Movements slower than this are scaled down (the slower, the more), so tiny unintended movements barely move the camera.</p>
         <p>Typical: 1-3 deg/s. Too high makes slow tracking feel sticky. 0 disables it.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-shot-shake'>
+        <h3>Shot shake suppression</h3>
+        <p>Pulling a trigger or pressing a button jolts the controller, and the gyro turns that jolt into an aim jerk right when you shoot.</p>
+        <p>For this many milliseconds after any button press or release, slow movement (below the speed set here) is damped. Fast deliberate aim and flicks always pass, and the damping fades out over the window.</p>
+        <p>Start with 80 ms and 30 deg/s. 0 ms disables it.</p>
+        <p><b>Aim still jumps when you shoot:</b> raise the speed or the time.</p>
+        <p><b>Aim feels glued for a moment after a shot</b> (the camera moves less than your hand, then catches up, mostly when tracking while shooting or with rapid fire): your own slow movement is being damped too. Lower the speed first, or the time.</p>
+        <p>More in the acceleration guide, section 10.</p>
         <div class='buttons'>
             <button (click)='hideDialogHelp()'>Makes sense</button>
         </div>

@@ -696,6 +696,10 @@ export class CtrlGyro extends CtrlSection {
     public rw_counts_hi = 0,
     public rw_ratio = 0,
     public rw_enabled = 0,
+    // Shot shake suppression (fork extension): window in ms (0 = off),
+    // speed threshold in deg/s (0 = 30).
+    public shot_time = 0,
+    public shot_threshold = 0,
   ) {
     super(1, DeviceId.ALPAKKA, MessageType.SECTION_SHARE)
   }
@@ -714,7 +718,7 @@ export class CtrlGyro extends CtrlSection {
       data[12],  // Accel speed max.
       data[13],  // Accel exponent.
       data[14],  // Accel smoothing.
-      ...data.slice(15, 32),  // ADS (8), stabilization and space (4), vertical accel (1), real world (4).
+      ...data.slice(15, 34),  // ADS (8), stabilization and space (4), vertical accel (1), real world (4), shot shake (2).
     )
   }
 
@@ -748,6 +752,8 @@ export class CtrlGyro extends CtrlSection {
       this.rw_counts_hi,
       this.rw_ratio,
       this.rw_enabled,
+      this.shot_time,
+      this.shot_threshold,
     ]
   }
 }
