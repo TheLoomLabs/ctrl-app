@@ -81,6 +81,9 @@ npm ci
 
 | Command | What it does |
 |---|---|
+| `make` | Development server at http://localhost:4200 (installs dependencies first if needed; `make PORT=4300` for another port) |
+| `make build` | Development build (compile check) |
+| `make test` | Unit tests |
 | `npx ng serve` | Development server at http://localhost:4200 |
 | `npx ng build` | Production build in `dist/` |
 | `npx ng test --watch=false --browsers=ChromeHeadless` | Unit tests |
