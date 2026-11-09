@@ -80,8 +80,8 @@ settings, per profile) you set sensitivity in real degrees instead:
 - **Counts per 360°**: how many mouse counts the game needs for a full turn at
   your in-game sensitivity. Measure it with **Calibrate in game**: switch to the
   game, press **R2** to turn, adjust with the **D-pad** (→ / ← ±1%,
-  ↑ / ↓ ±0.1%) until one turn ends exactly where it started, then **Save** in
-  the app. **Home** cancels.
+  ↑ / ↓ ±0.1%) and **R1 / L1** (±1 count) until one turn ends exactly where it
+  started, then **Save** in the app. **Home** cancels.
 - **Ratio**: in-game degrees per controller degree. 1.0 = natural, 2 – 3 is
   common. The first calibration picks the ratio that matches your current feel.
 

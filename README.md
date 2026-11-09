@@ -24,7 +24,7 @@ with our firmware fork,
 ### Real-world calibration
 
 - Sensitivity in real degrees per profile: measure the game's **counts per
-  360°** with an in-game test turn (R2 to turn, D-pad to adjust), then pick a
+  360°** with an in-game test turn (R2 to turn, D-pad and R1 / L1 to adjust), then pick a
   **ratio** (in-game degrees per controller degree). Same ratio = same feel in
   every game.
 
