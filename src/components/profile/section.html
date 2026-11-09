@@ -1304,16 +1304,16 @@ Copyright (C) 2023, Input Labs Oy.
     <dialog id='dialog-calib360'>
         <h3>Calibrate in game</h3>
         <ng-container *ngIf='calib360'>
-            <p>The controller is in calibration mode: normal input is paused.</p>
+            <p>The controller is in calibration mode: buttons and sticks are paused, the gyro still aims.</p>
             <ol>
                 <li>Switch to the game (Alt+Tab) and stand still, looking at a landmark.</li>
-                <li>Press <b>R2</b>: the camera turns by the current count.</li>
+                <li>Press <b>R2</b>: the camera turns by the current count. The gyro pauses during the turn.</li>
                 <li>Adjust until it ends exactly on the landmark after one full turn:
                     <b>D-pad &rarr; / &larr;</b> = +1% / &minus;1%,
                     <b>D-pad &uarr; / &darr;</b> = +0.1% / &minus;0.1%.</li>
                 <li>Come back here and press <b>Save</b>. <b>Home</b> on the controller cancels.</li>
             </ol>
-            <p>Turns too little: increase. Turns too far: decrease.</p>
+            <p>Turns too little: increase. Turns too far: decrease. Use the gyro to aim back at the landmark before the next try.</p>
             <p class='calib360-counts'>Counts per 360&deg;: <b>{{calib360.counts}}</b></p>
             <p *ngIf='calib360.cancelled' class='warning'>Calibration was cancelled on the controller. Save keeps the last value.</p>
             <p>Tip: turn off mouse acceleration in the game (Windows pointer settings do not affect most games).</p>
