@@ -1298,8 +1298,11 @@ Copyright (C) 2023, Input Labs Oy.
         <p><b>Counts per 360&deg;:</b> how many mouse counts this game needs for a full turn. It depends on the game and its in-game sensitivity. Measure it with <b>Calibrate in game</b>.</p>
         <p><b>Ratio:</b> how many degrees you turn in game per degree you turn the controller. 1.0 is natural (90&deg; on the controller is 90&deg; in game). Most players like 2 to 3. Use the same ratio in all your game profiles and they all feel identical.</p>
         <p>Acceleration, vertical acceleration and aim-down-sights apply on top: at 1x gain you get exactly the ratio.</p>
-        <p><b>Match mouse sensitivity</b> sets the ratio that feels like your global mouse sensitivity, a good starting point.</p>
-        <p>Turning it off keeps the calibration, so you can turn it on again without measuring. Keep the in-game sensitivity the same after calibrating; if you change it, calibrate again.</p>
+        <p><b>Ratio guide:</b> 2.0 = 180&deg; of controller rotation for a full turn (precise), 3.0 = 120&deg; (a good start), 4.0 = 90&deg; (fast).</p>
+        <p><b>Match mouse sensitivity</b> sets the ratio that feels like Settings &rarr; Mouse sensitivity. Use it only to keep your previous gyro speed; otherwise type a ratio.</p>
+        <p>While on, Settings &rarr; Mouse sensitivity does not apply to this profile. Turning it off keeps the calibration, so you can turn it on again without measuring.</p>
+        <p>Set the in-game <b>mouse</b> sensitivity before calibrating and keep it; if you change it, calibrate again (the ratio is kept). Acceleration does not need to be off to calibrate.</p>
+        <p><a href="https://github.com/TheLoomLabs/ctrl-app/blob/gyro-accel/docs/gyro-acceleration.md#9-real-world-calibration" target="_blank">Full guide with questions and answers</a></p>
         <div class='buttons'>
             <button (click)='hideDialogHelp()'>Makes sense</button>
         </div>

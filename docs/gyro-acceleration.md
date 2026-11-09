@@ -73,22 +73,11 @@ firmware and in the app graph, so the graph is exactly what the controller does.
 
 ### Real-world calibration (optional)
 
-By default, gyro speed comes from the global *mouse sensitivity*, so the same
-setting feels different in every game. With **Real-world calibration** (Gyro
-settings, per profile) you set sensitivity in real degrees instead:
-
-- **Counts per 360°**: how many mouse counts the game needs for a full turn at
-  your in-game sensitivity. Measure it with **Calibrate in game**: switch to the
-  game, press **R2** to turn, adjust with the **D-pad** (→ / ← ±1%,
-  ↑ / ↓ ±0.1%) and **R1 / L1** (±1 count) until one turn ends exactly where it
-  started, then **Save** in the app. **Home** cancels.
-- **Ratio**: in-game degrees per controller degree. 1.0 = natural, 2 – 3 is
-  common. The first calibration picks the ratio that matches your current feel.
-
-Use the same ratio in every game profile and every game feels the same.
-Acceleration multiplies on top: at 1× gain you get exactly the ratio, so
-`turn = controller rotation × ratio × gain`. Re-calibrate if you change the
-in-game sensitivity.
+By default, gyro speed comes from the global *Mouse sensitivity* setting, so
+the same setting feels different in every game. With **Real-world
+calibration** (Gyro settings, per profile) you set the gyro speed in real
+degrees instead, and it feels the same in every game. See section 9 for the
+full guide.
 
 ---
 
@@ -247,3 +236,100 @@ Change **one value at a time** and test in game after each change.
   re-engaging never causes a jump.
 - Everything is normalized to real time: 250, 500 and 1000 Hz polling feel the
   same.
+
+---
+
+## 9. Real-world calibration
+
+### What it is
+
+Two values per profile replace the global mouse sensitivity:
+
+| Value | Meaning |
+|---|---|
+| **Counts per 360°** | How many mouse counts this game needs for a full turn, at your in-game mouse sensitivity. Measured once per game. |
+| **Ratio** | How many degrees you turn in game per degree you turn the controller. Ratio 3 = turning the controller 10° turns you 30°. |
+
+`in-game turn = controller rotation × ratio × acceleration gain`
+
+Use the **same ratio in every game profile**: every game then feels the same,
+whatever its own sensitivity scale.
+
+### Setup, step by step
+
+1. **In the game:** set the **mouse** sensitivity you want to keep and turn off
+   in-game mouse acceleration and mouse smoothing. Controller / gamepad
+   sensitivity in the game does not matter (the gyro is mouse input).
+2. **In the app:** Profile → Gyro settings → Real-world calibration →
+   **Set up (calibrate in game)**. The controller enters calibration mode:
+   buttons and sticks are paused, the gyro still aims.
+3. **In the game:** look at a landmark, hold still, press **R2**. The camera
+   turns by the current count (the gyro pauses during the turn).
+   - Turned too little → increase, too far → decrease:
+     **D-pad → / ←** ±1%, **D-pad ↑ / ↓** ±0.1%, **R1 / L1** ±1 count.
+   - Aim back at the landmark with the gyro and press R2 again.
+   - Repeat until one turn ends exactly on the landmark.
+4. **In the app:** press **Save** (**Home** on the controller cancels).
+5. **Set the ratio** (next section).
+
+### Choosing the ratio
+
+| Ratio | Controller rotation for a full 360° | Feel |
+|---|---|---|
+| 1.0 | 360° | natural, 1:1 with the real world |
+| 2.0 | 180° | precise, big turns need a large motion |
+| 3.0 | 120° | quick, a good start for most players |
+| 4.0 | 90° | fast, fine aim gets harder |
+
+With acceleration on, the ratio sets your **precise aiming speed** (slow
+movement, 1× gain) and acceleration adds the flick turns on top. That is the
+recommended combination: e.g. ratio 3 + *Flick turns* or *Sigmoid flick*.
+
+Play 10 – 15 minutes before changing it, then adjust in 0.2 steps:
+overshooting targets → lower, turning feels like work → higher.
+
+### Questions
+
+**Does acceleration need to be off to calibrate?**
+No. The R2 test turn sends an exact number of mouse counts directly; the gyro,
+acceleration and smoothing are not involved.
+
+**Which in-game sensitivity should I use?**
+Any, the ratio decides the feel. Mouse players can keep their usual setting
+(e.g. 15 cm/360): the mouse keeps its feel, the gyro gets its own speed from
+the ratio. Only the count must stay in a sensible range, see next question.
+If you change the in-game sensitivity later, calibrate again (your ratio is
+kept).
+
+**Is my count a good value?**
+3,000 – 30,000 counts per 360° is ideal: one count is then a tiny step
+(e.g. 7,191 counts = 0.05° per count) and aim is smooth. Under ~1,000 the
+camera moves in visible steps: lower the in-game sensitivity. The allowed
+range is 100 – 65,535.
+
+**The turn ends a few pixels off, even with ±1 count.**
+Normal. Many games need a fractional count for a 360 (e.g. 7,191.4), so no
+whole count is exact. The error is far below 0.1% and cannot be felt: gyro aim
+is relative, you aim at what you see.
+
+**What does "Match mouse sensitivity" do? Should I press it?**
+It sets the ratio that makes the gyro feel exactly like the global *Mouse
+sensitivity* did. Press it only if you liked your previous gyro speed and want
+to keep it. If you want a specific feel, or come from mouse gaming, type the
+ratio yourself (e.g. 3.0) instead. The first calibration of a profile does the
+same automatically, so nothing changes until you pick a ratio.
+
+**What about Settings → Mouse sensitivity?**
+It is the global gyro speed for profiles **without** real-world calibration
+(also adjustable with Home + right stick down). Profiles with real-world
+calibration on ignore it; the ratio replaces it.
+
+**Can I turn it off again?**
+Yes, **Turn off** in the profile. The profile goes back to the global mouse
+sensitivity, and the count and ratio are kept, so **Turn on** restores them
+without calibrating again.
+
+**Does it also change aim-down-sights and vertical acceleration?**
+They work on top as before: aim-down-sights sensitivity multiplies the
+ratio, vertical acceleration reduces only the acceleration boost. If the game
+has its own zoom / ADS sensitivity multiplier, that applies too.
