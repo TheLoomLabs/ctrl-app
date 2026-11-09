@@ -2,7 +2,7 @@
 // Copyright (C) 2023, Input Labs Oy.
 
 import { CtrlSectionMeta, CtrlButton, CtrlRotary, CtrlThumbstick, ButtonMode } from 'lib/ctrl'
-import { SectionIndex, CtrlGyro, CtrlGyroAxis, CtrlHome } from 'lib/ctrl'
+import { SectionIndex, CtrlGyro, CtrlGyroAxis, CtrlHome, CtrlMacro } from 'lib/ctrl'
 import { ActionGroup } from 'lib/actions'
 import { HID } from 'lib/hid'
 
@@ -67,6 +67,10 @@ export class Profile {
     public gyroX: CtrlGyroAxis = CtrlGyroAxis.default(),
     public gyroY: CtrlGyroAxis = CtrlGyroAxis.default(),
     public gyroZ: CtrlGyroAxis = CtrlGyroAxis.default(),
+    public macro1: CtrlMacro = new CtrlMacro(0, SectionIndex.MACRO_1),
+    public macro2: CtrlMacro = new CtrlMacro(0, SectionIndex.MACRO_2),
+    public macro3: CtrlMacro = new CtrlMacro(0, SectionIndex.MACRO_3),
+    public macro4: CtrlMacro = new CtrlMacro(0, SectionIndex.MACRO_4),
   ) {
     // Fake home definitions.
     const actions = [

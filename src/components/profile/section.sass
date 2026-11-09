@@ -203,3 +203,93 @@
         background-color: black
         .material
             color: $yellow
+
+    // Macros (fork extension).
+    .macro-tabs
+        display: grid
+        grid-template-columns: repeat(4, 1fr)
+        gap: 6px
+        margin-bottom: 20px
+        .macro-tab
+            background: black
+            border-radius: 6px
+            padding: 6px 8px
+            cursor: pointer
+            border: 2px solid transparent
+            min-width: 0
+            .num
+                font-weight: bold
+                font-size: 14px
+            .summary
+                font-size: 11px
+                color: hsl(0deg, 0%, 55%)
+                white-space: nowrap
+                overflow: hidden
+                text-overflow: ellipsis
+            &.active
+                border-color: $green
+
+    .macro-steps
+        display: flex
+        flex-direction: column
+        gap: 4px
+        .macro-step
+            display: flex
+            align-items: center
+            gap: 6px
+            background: black
+            border-radius: 6px
+            padding: 4px 6px
+            font-size: 13px
+            select
+                background: hsl(0deg, 0%, 15%)
+                color: white
+                border: none
+                border-radius: 4px
+                padding: 4px
+                font-size: 13px
+            .idx
+                width: 18px
+                color: hsl(0deg, 0%, 50%)
+            .op
+                width: 92px
+            .action
+                flex: 1
+                min-width: 0
+            .then
+                color: hsl(0deg, 0%, 50%)
+                font-size: 12px
+            .delay
+                width: 84px
+            .btn
+                cursor: pointer
+                font-size: 18px
+                color: hsl(0deg, 0%, 55%)
+                &:hover
+                    color: white
+        .macro-empty
+            font-size: 13px
+            color: hsl(0deg, 0%, 50%)
+            padding: 8px
+
+    .macro-actions
+        display: flex
+        flex-wrap: wrap
+        gap: 6px
+        button
+            display: flex
+            align-items: center
+            gap: 4px
+            .material
+                font-size: 16px
+            &.recording
+                background-color: hsl(0deg, 80%, 45%)
+                color: white
+
+    .macro-record-pad
+        border: 2px dashed $green
+        border-radius: 8px
+        padding: 24px 16px
+        font-size: 13px
+        text-align: center
+        user-select: none

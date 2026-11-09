@@ -192,3 +192,26 @@ export function plotGyroAccel(canvas: HTMLCanvasElement, params: GyroAccelParams
   ctx.lineWidth = 3
   ctx.stroke()
 }
+
+// Aim-down-sights curve: same units, its own bytes. Smoothing is shared.
+export function paramsFromGyroAds(gyro: CtrlGyro): GyroAccelParams {
+  return {
+    curve: Number(gyro.ads_accel_curve),
+    gainMin: (gyro.ads_accel_gain_min || 100) / 100,
+    gainMax: (gyro.ads_accel_gain_max || 10) / 10,
+    threshold: gyro.ads_accel_threshold * 2,
+    speedMax: gyro.ads_accel_speed_max * 4,
+    exponent: gyro.ads_accel_exponent / 10,
+    smoothing: gyro.accel_smoothing,
+  }
+}
+
+export function applyParamsToGyroAds(gyro: CtrlGyro, p: GyroAccelParams) {
+  const byte = (v: number) => Math.max(0, Math.min(255, Math.round(v)))
+  gyro.ads_accel_curve = p.curve
+  gyro.ads_accel_gain_min = byte(p.gainMin * 100)
+  gyro.ads_accel_gain_max = byte(p.gainMax * 10)
+  gyro.ads_accel_threshold = byte(p.threshold / 2)
+  gyro.ads_accel_speed_max = byte(p.speedMax / 4)
+  gyro.ads_accel_exponent = byte(p.exponent * 10)
+}

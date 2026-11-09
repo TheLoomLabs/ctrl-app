@@ -10,6 +10,30 @@
     height: 100%
     max-height: 100%
     .template
+        position: relative
+        .macros-button
+            position: absolute
+            top: 12px
+            left: 12px
+            z-index: 2
+            display: flex
+            align-items: center
+            gap: 6px
+            padding: 6px 12px
+            border-radius: 6px
+            background-color: hsl(0deg, 0%, 15%)
+            color: white
+            font-size: 14px
+            font-weight: bold
+            cursor: pointer
+            user-select: none
+            border: 2px solid transparent
+            .material
+                font-size: 18px
+            &:hover
+                background-color: hsl(0deg, 0%, 22%)
+            &.selected
+                border-color: hsl(160deg, 100%, 50%)
         flex-grow: 1
         display: flex
         flex-shrink: 1

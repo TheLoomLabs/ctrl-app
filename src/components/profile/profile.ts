@@ -9,6 +9,7 @@ import { ButtonComponent } from 'components/profile/action_preview'
 import { SectionComponent } from 'components/profile/section'
 import { LedComponent, getProfileLed } from 'components/led/led'
 import { CtrlSection, CtrlSectionMeta, CtrlButton, CtrlRotary, CtrlGyroAxis } from 'lib/ctrl'
+import { CtrlMacro } from 'lib/ctrl'
 import { ThumbstickMode, GyroMode } from 'lib/ctrl'
 import { sectionIsGyroAxis, sectionIsHome } from 'lib/ctrl'
 import { SectionIndex } from 'lib/ctrl'
@@ -90,6 +91,14 @@ export class ProfileComponent {
 
   setSelectedGyro() {
     this.selected = this.getProfile().settingsGyro
+  }
+
+  setSelectedMacros() {
+    this.selected = this.getProfile().macro1
+  }
+
+  selectedIsMacro() {
+    return this.selected instanceof CtrlMacro
   }
 
   getSelected() {

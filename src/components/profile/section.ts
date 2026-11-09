@@ -19,6 +19,12 @@ import { delay } from 'lib/delay'
 import { plotCircle, plotRamp, plotRotation } from 'lib/plot'
 import { GyroAccelCurve, GyroAccelParams, curveNames, defaultExponent, presets } from 'lib/gyro_accel'
 import { paramsFromGyro, applyParamsToGyro, gain, plotGyroAccel, GYRO_MAX_SPEED } from 'lib/gyro_accel'
+import { paramsFromGyroAds, applyParamsToGyroAds } from 'lib/gyro_accel'
+import { CtrlMacro } from 'lib/ctrl'
+import { Macro, MacroMode, MacroOp, MacroStep, RecordedEvent, MACRO_STEPS_MAX } from 'lib/macro'
+import { decodeMacro, encodeMacro, emptyMacro, describeMacro, stepsFromRecording } from 'lib/macro'
+import { macroModeNames, macroOpNames, delayOptions, playableActions, snapDelay } from 'lib/macro'
+import { hidFromKeyCode, hidFromMouseButton } from 'lib/macro'
 
 @Component({
   selector: 'app-section',
@@ -62,6 +68,22 @@ export class SectionComponent {
   accelCurveNames = curveNames
   accelPresets = presets
   accelExampleSpeeds = [30, 150, 300, 500]
+
+  // Macros.
+  MacroOp = MacroOp
+  macroModes = [MacroMode.ONCE, MacroMode.REPEAT_HELD, MacroMode.TOGGLE]
+  macroModeNames = macroModeNames
+  macroOps = [MacroOp.TAP, MacroOp.DOWN, MacroOp.UP, MacroOp.WAIT]
+  macroOpNames = macroOpNames
+  macroDelayOptions = delayOptions
+  macroActions = playableActions
+  macroStepsMax = MACRO_STEPS_MAX
+  macroIndex = 0  // 0-7.
+  macroEdit: Macro | null = null
+  macroRecording = false
+  macroRecordEvents: RecordedEvent[] = []
+  macroRecordStart = 0
+  private macroListeners: [string, (e: any) => void][] = []
   green = 'hsl(160deg, 100%, 50%)'
   purple = 'hsl(266deg, 100%, 50%)'
 
@@ -158,6 +180,180 @@ export class SectionComponent {
   // compared to the same turn without acceleration.
   accelFlickDegrees(gyro: CtrlGyro, turn: number) {
     return turn / gain(paramsFromGyro(gyro), Math.min(400, GYRO_MAX_SPEED))
+  }
+
+  sectionIsMacro = () => this.section instanceof CtrlMacro
+
+  ngOnChanges() {
+    this.macroEdit = null
+    this.macroStopRecording(false)
+  }
+
+  ngOnDestroy() {
+    this.macroStopRecording(false)
+  }
+
+  private macroSection(index: number): CtrlMacro {
+    const profile = this.profiles.profiles[this.profileIndex]
+    return [profile.macro1, profile.macro2, profile.macro3, profile.macro4][Math.floor(index / 2)]
+  }
+
+  macroSummary(index: number) {
+    const section = this.macroSection(index)
+    const sub = index % 2
+    return describeMacro(decodeMacro(section.macros[sub], section.formats[sub]))
+  }
+
+  macro(): Macro {
+    if (!this.macroEdit) {
+      const section = this.macroSection(this.macroIndex)
+      const sub = this.macroIndex % 2
+      this.macroEdit = decodeMacro(section.macros[sub], section.formats[sub])
+    }
+    return this.macroEdit
+  }
+
+  macroSelect(index: number) {
+    this.macroStopRecording(false)
+    this.macroIndex = index
+    this.macroEdit = null
+  }
+
+  async macroSave() {
+    const macro = this.macro()
+    macro.legacy = false
+    const section = this.macroSection(this.macroIndex)
+    const sub = this.macroIndex % 2
+    const {bytes, format} = encodeMacro(macro)
+    section.macros[sub] = bytes
+    section.formats[sub] = format
+    section.profileIndex = this.profileIndex
+    await this.webusb.trySetSection(this.profileIndex, section)
+  }
+
+  macroAddStep(op = MacroOp.TAP) {
+    const macro = this.macro()
+    if (macro.steps.length >= MACRO_STEPS_MAX) return
+    macro.steps.push({action: op == MacroOp.WAIT ? 0 : HID.KEY_SPACE, op, delay: op == MacroOp.WAIT ? 100 : 30})
+    this.macroSave()
+  }
+
+  macroRemoveStep(i: number) {
+    this.macro().steps.splice(i, 1)
+    this.macroSave()
+  }
+
+  macroMoveStep(i: number, dir: number) {
+    const steps = this.macro().steps
+    const j = i + dir
+    if (j < 0 || j >= steps.length) return
+    [steps[i], steps[j]] = [steps[j], steps[i]]
+    this.macroSave()
+  }
+
+  macroSetStep(step: MacroStep, patch: Partial<MacroStep>) {
+    Object.assign(step, patch)
+    if (patch.delay !== undefined) step.delay = snapDelay(Number(patch.delay))
+    this.macroSave()
+  }
+
+  macroClear() {
+    const mode = this.macro().mode
+    const tapMs = this.macro().tapMs
+    this.macroEdit = {...emptyMacro(), mode, tapMs}
+    this.macroSave()
+  }
+
+  macroStartRecording() {
+    if (this.macroRecording) return
+    this.macroRecording = true
+    this.macroRecordEvents = []
+    this.macroRecordStart = performance.now()
+    const push = (action: number, down: boolean) => {
+      if (!action) return
+      const events = this.macroRecordEvents
+      // Ignore key auto-repeat.
+      const last = [...events].reverse().find((e) => e.action == action)
+      if (down && last && last.down) return
+      events.push({action, down, time: performance.now() - this.macroRecordStart})
+      // Each tap uses one step, holds use two: stop when surely full.
+      if (events.length >= MACRO_STEPS_MAX * 2) this.macroStopRecording(true)
+    }
+    const onKey = (down: boolean) => (e: KeyboardEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      push(hidFromKeyCode(e.code), down)
+    }
+    const onMouse = (down: boolean) => (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest || !target.closest('.macro-record-pad')) return
+      e.preventDefault()
+      push(hidFromMouseButton(e.button), down)
+    }
+    const noMenu = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (target.closest && target.closest('.macro-record-pad')) e.preventDefault()
+    }
+    this.macroListeners = [
+      ['keydown', onKey(true)],
+      ['keyup', onKey(false)],
+      ['mousedown', onMouse(true)],
+      ['mouseup', onMouse(false)],
+      ['contextmenu', noMenu],
+    ]
+    for (const [name, fn] of this.macroListeners) window.addEventListener(name, fn, true)
+  }
+
+  macroStopRecording(apply: boolean) {
+    for (const [name, fn] of this.macroListeners) window.removeEventListener(name, fn, true)
+    this.macroListeners = []
+    if (!this.macroRecording) return
+    this.macroRecording = false
+    if (apply && this.macroRecordEvents.length > 0) {
+      this.macro().steps = stepsFromRecording(this.macroRecordEvents)
+      this.macroSave()
+    }
+  }
+
+  // Aim-down-sights acceleration.
+  adsParams(gyro: CtrlGyro): GyroAccelParams {
+    return paramsFromGyroAds(gyro)
+  }
+
+  adsSet(gyro: CtrlGyro, patch: Partial<GyroAccelParams>) {
+    const params = {...paramsFromGyroAds(gyro), ...patch}
+    applyParamsToGyroAds(gyro, params)
+    this.save()
+  }
+
+  adsSetCurve(gyro: CtrlGyro, curve: GyroAccelCurve) {
+    const current = paramsFromGyroAds(gyro)
+    if (current.curve == GyroAccelCurve.OFF && curve != GyroAccelCurve.OFF && current.speedMax == 0) {
+      // First time enabled: start from the hip curve.
+      this.adsSet(gyro, {...paramsFromGyro(gyro), curve, exponent: defaultExponent[curve]})
+      return
+    }
+    this.adsSet(gyro, {curve, exponent: defaultExponent[curve] || current.exponent})
+  }
+
+  adsGain(gyro: CtrlGyro, speed: number) {
+    return gain(paramsFromGyroAds(gyro), speed) * ((gyro.ads_sens || 100) / 100)
+  }
+
+  adsPinOptions() {
+    const pins = this.getPins() as any
+    const names: [string, string][] = [
+      ['L2', 'L2'], ['R2', 'R2'], ['L1', 'L1'], ['R1', 'R1'], ['L4', 'L4'], ['R4', 'R4'],
+      ['L3', 'L3 (left stick push)'], ['R3', 'R3'], ['A', 'A'], ['B', 'B'], ['X', 'X'], ['Y', 'Y'],
+      ['DPAD_LEFT', 'DPad Left'], ['DPAD_RIGHT', 'DPad Right'], ['DPAD_UP', 'DPad Up'],
+      ['DPAD_DOWN', 'DPad Down'],
+    ]
+    return names.filter(([key]) => pins[key] !== undefined).map(([key, label]) => ({value: pins[key] as number, label}))
+  }
+
+  gyroSetRaw(gyro: CtrlGyro, key: 'ads_engage' | 'ads_sens' | 'tighten' | 'smooth_threshold' | 'smooth_time' | 'space', value: number) {
+    gyro[key] = Math.max(0, Math.min(255, Math.round(Number(value))))
+    this.save()
   }
 
   getSectionTitle() {

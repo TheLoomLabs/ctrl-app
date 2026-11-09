@@ -177,6 +177,10 @@ export function sectionIsGyroAxis(section: SectionIndex) {
   return section >= SectionIndex.GYRO_X && section <= SectionIndex.GYRO_Z
 }
 
+export function sectionIsMacro(section: SectionIndex) {
+  return section >= SectionIndex.MACRO_1 && section <= SectionIndex.MACRO_4
+}
+
 export function sectionIsHome(section: SectionIndex) {
   return section == SectionIndex.HOME
 }
@@ -233,6 +237,7 @@ export class Ctrl {
       else if (sectionIsThumbtick(section)) return CtrlThumbstick.decode(buffer)
       else if (sectionIsGyro(section)) return CtrlGyro.decode(buffer)
       else if (sectionIsGyroAxis(section)) return CtrlGyroAxis.decode(buffer)
+      else if (sectionIsMacro(section)) return CtrlMacro.decode(buffer)
       else return CtrlButton.decode(buffer)
     }
     return false
@@ -661,6 +666,20 @@ export class CtrlGyro extends CtrlSection {
     public accel_speed_max = 0,
     public accel_exponent = 0,
     public accel_smoothing = 0,
+    // Aim-down-sights modifier (fork extension).
+    public ads_engage = 0,
+    public ads_sens = 0,
+    public ads_accel_curve = 0,
+    public ads_accel_gain_min = 0,
+    public ads_accel_gain_max = 0,
+    public ads_accel_threshold = 0,
+    public ads_accel_speed_max = 0,
+    public ads_accel_exponent = 0,
+    // Stabilization and space (fork extension).
+    public tighten = 0,
+    public smooth_threshold = 0,
+    public smooth_time = 0,
+    public space = 0,
   ) {
     super(1, DeviceId.ALPAKKA, MessageType.SECTION_SHARE)
   }
@@ -679,6 +698,7 @@ export class CtrlGyro extends CtrlSection {
       data[12],  // Accel speed max.
       data[13],  // Accel exponent.
       data[14],  // Accel smoothing.
+      ...data.slice(15, 27),  // ADS (8 bytes), stabilization and space (4 bytes).
     )
   }
 
@@ -695,6 +715,18 @@ export class CtrlGyro extends CtrlSection {
       this.accel_speed_max,
       this.accel_exponent,
       this.accel_smoothing,
+      Number(this.ads_engage),
+      this.ads_sens,
+      Number(this.ads_accel_curve),
+      this.ads_accel_gain_min,
+      this.ads_accel_gain_max,
+      this.ads_accel_threshold,
+      this.ads_accel_speed_max,
+      this.ads_accel_exponent,
+      this.tighten,
+      this.smooth_threshold,
+      this.smooth_time,
+      Number(this.space),
     ]
   }
 }
@@ -787,3 +819,35 @@ export class CtrlStatusShare extends Ctrl {
 }
 
 export class CtrlHome extends CtrlButton {}
+
+// Two macros per section (fork extension), see lib/macro.ts for the encoding.
+export class CtrlMacro extends CtrlSection {
+  constructor(
+    public override profileIndex: number,
+    public override sectionIndex: SectionIndex,
+    public macros: number[][] = [Array(28).fill(0), Array(28).fill(0)],
+    public formats: number[] = [0, 0],
+  ) {
+    super(1, DeviceId.ALPAKKA, MessageType.SECTION_SHARE)
+  }
+
+  static override decode(buffer: Uint8Array) {
+    const data = Array.from(buffer)
+    return new CtrlMacro(
+      data[4],  // ProfileIndex.
+      data[5],  // SectionIndex.
+      [data.slice(6, 34), data.slice(34, 62)],
+      [data[62], data[63]],
+    )
+  }
+
+  override payload() {
+    return [
+      this.profileIndex,
+      this.sectionIndex,
+      ...this.macros[0],
+      ...this.macros[1],
+      ...this.formats,
+    ]
+  }
+}

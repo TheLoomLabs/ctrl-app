@@ -12,6 +12,14 @@ Copyright (C) 2023, Input Labs Oy.
 </div>
 
 <div class="template" *ngIf='webusb.isConnectedRaw() && webusb.isController()'>
+    <!-- Macros (fork extension). -->
+    <div
+        class='macros-button'
+        [ngClass]="selectedIsMacro() ? 'selected' : ''"
+        (click)='setSelectedMacros()'
+        >
+        <span class='material'>keyboard_command_key</span> Macros
+    </div>
     <div class='fixed_aspect'>
         <!-- BUTTONS -->
         <div
