@@ -46,10 +46,10 @@ with our firmware fork,
 
 ## Getting started
 
-1. **Flash the firmware.** Build it from
-   [TheLoomLabs/alpakka_firmware](https://github.com/TheLoomLabs/alpakka_firmware)
-   (branch `gyro-accel`). In the app, open **Logs → Restart in bootsel mode**,
-   then copy the `.uf2` file to the `RPI-RP2` drive that appears.
+1. **Flash the firmware.** Download the `.uf2` file from the
+   [firmware releases](https://github.com/TheLoomLabs/alpakka_firmware/releases)
+   (currently Alpakka v1 only). In the app, open **Logs → Restart in bootsel
+   mode**, then copy the `.uf2` file to the `RPI-RP2` drive that appears.
 2. **Run the app** (see below) and open it in a Chromium-based browser such as
    Chrome or Edge (WebUSB is required).
 3. Connect the controller over USB.
