@@ -73,11 +73,17 @@ npm ci
 |---|---|
 | `npx ng serve` | Development server at http://localhost:4200 |
 | `npx ng build` | Production build in `dist/` |
-| `npx ng test` | Unit tests |
+| `npx ng test --watch=false --browsers=ChromeHeadless` | Unit tests |
 
 The acceleration math in `src/lib/gyro_accel.ts` and the macro encoding in
 `src/lib/macro.ts` mirror the firmware (`src/gyro.c`, `src/macro.c`). Keep them
-in sync when changing either side.
+in sync when changing either side. The tests check the acceleration curves
+against values computed by the firmware code itself; after changing the
+firmware math, regenerate them (needs a C compiler and the firmware checkout):
+
+```bash
+sh scripts/accel_golden.sh ../alpakka_firmware > src/lib/gyro_accel.golden.ts
+```
 
 ## Credits and license
 
