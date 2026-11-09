@@ -4,6 +4,7 @@ import { Ctrl, CtrlGyro, SectionIndex } from 'lib/ctrl'
 import {
   GyroAccelCurve, GyroAccelParams, gain, presets,
   paramsFromGyro, applyParamsToGyro, paramsFromGyroAds, applyParamsToGyroAds,
+  verticalShare, setVerticalShare, verticalGain,
 } from 'lib/gyro_accel'
 import { ACCEL_GOLDEN, ACCEL_SPEEDS } from 'lib/gyro_accel.golden'
 
@@ -88,6 +89,40 @@ describe('gyro acceleration', () => {
     })
   })
 
+  describe('vertical acceleration', () => {
+    const p: GyroAccelParams = {
+      curve: GyroAccelCurve.LINEAR, gainMin: 1, gainMax: 5,
+      threshold: 100, speedMax: 300, exponent: 0, smoothing: 10,
+    }
+
+    it('stock profiles (byte 0) get the full boost on vertical', () => {
+      const gyro = new CtrlGyro(0, SectionIndex.GYRO_SETTINGS, 0, 0)
+      expect(verticalShare(gyro)).toBe(1)
+      expect(verticalGain(p, 300, 1)).toBe(gain(p, 300))
+    })
+
+    it('scales only the boost above the low-speed gain', () => {
+      expect(verticalGain(p, 300, 0.5)).toBe(3)
+      expect(verticalGain(p, 300, 0)).toBe(1)
+      const precision = {...p, gainMin: 0.7}
+      expect(verticalGain(precision, 0, 0)).toBe(0.7)
+      expect(verticalGain(precision, 300, 0)).toBe(0.7)
+    })
+
+    it('stores the reduction in percent and clamps', () => {
+      const gyro = new CtrlGyro(0, SectionIndex.GYRO_SETTINGS, 0, 0)
+      setVerticalShare(gyro, 0.4)
+      expect(gyro.accel_vertical_cut).toBe(60)
+      expect(verticalShare(gyro)).toBeCloseTo(0.4, 10)
+      setVerticalShare(gyro, 0)
+      expect(gyro.accel_vertical_cut).toBe(100)
+      setVerticalShare(gyro, 2)
+      expect(gyro.accel_vertical_cut).toBe(0)
+      gyro.accel_vertical_cut = 200  // Out of range from a bad profile.
+      expect(verticalShare(gyro)).toBe(0)
+    })
+  })
+
   describe('profile bytes', () => {
     it('all-zero bytes (stock profile) mean off with neutral gains', () => {
       const p = paramsFromGyro(new CtrlGyro(0, SectionIndex.GYRO_SETTINGS, 0, 0))
@@ -130,15 +165,15 @@ describe('gyro acceleration', () => {
 
   describe('CtrlGyro message', () => {
     it('places every field at its documented byte and decodes back', () => {
-      // Values 1..23 so a shifted field is detected.
-      const fields = Array.from({length: 23}, (_, i) => i + 1)
+      // Values 1..24 so a shifted field is detected.
+      const fields = Array.from({length: 24}, (_, i) => i + 1)
       const gyro = new CtrlGyro(
         ...(fields as [number, number, number, number, ...number[]]),
       )
       const data = gyro.encode()
-      // Payload starts at byte 4: profile, section, then CtrlGyro bytes 0-20.
-      expect(Array.from(data.slice(4, 27))).toEqual(fields)
-      expect(data[3]).toBe(23)
+      // Payload starts at byte 4: profile, section, then CtrlGyro bytes 0-21.
+      expect(Array.from(data.slice(4, 28))).toEqual(fields)
+      expect(data[3]).toBe(24)
       // Section byte must route to CtrlGyro, so use the real index.
       data[5] = SectionIndex.GYRO_SETTINGS
       const decoded = Ctrl.decode(data) as CtrlGyro

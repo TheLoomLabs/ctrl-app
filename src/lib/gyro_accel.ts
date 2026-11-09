@@ -93,6 +93,21 @@ export function gain(params: GyroAccelParams, speed: number) {
   return params.gainMin + (params.gainMax - params.gainMin) * shape(params.curve, t, params.exponent)
 }
 
+// Share of the acceleration boost applied to the vertical (pitch) axis, 0-1.
+// Stored as the reduction in %, so zero (stock profiles) means full boost.
+export function verticalShare(gyro: CtrlGyro) {
+  return 1 - Math.min(gyro.accel_vertical_cut, 100) / 100
+}
+
+export function setVerticalShare(gyro: CtrlGyro, share: number) {
+  gyro.accel_vertical_cut = Math.round(100 - Math.max(0, Math.min(1, share)) * 100)
+}
+
+// Vertical gain: only part of the boost above the low-speed gain (as gyro.c).
+export function verticalGain(params: GyroAccelParams, speed: number, share: number) {
+  return params.gainMin + (gain(params, speed) - params.gainMin) * share
+}
+
 export interface GyroAccelPreset {
   name: string
   description: string
@@ -129,7 +144,12 @@ export interface PlotColors {
   text: string
 }
 
-export function plotGyroAccel(canvas: HTMLCanvasElement, params: GyroAccelParams, colors: PlotColors) {
+export function plotGyroAccel(
+  canvas: HTMLCanvasElement,
+  params: GyroAccelParams,
+  colors: PlotColors,
+  vertical = 1,  // Share of the boost on the vertical axis, drawn when below 1.
+) {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   const w = canvas.width
@@ -191,6 +211,21 @@ export function plotGyroAccel(canvas: HTMLCanvasElement, params: GyroAccelParams
   ctx.strokeStyle = colors.curve
   ctx.lineWidth = 3
   ctx.stroke()
+  // Vertical curve, dashed, when it differs.
+  if (params.curve != GyroAccelCurve.OFF && vertical < 1) {
+    ctx.beginPath()
+    for (let i = 0; i <= plotW; i++) {
+      const speed = (i / plotW) * maxSpeed
+      const y = py(verticalGain(params, speed, vertical))
+      if (i == 0) ctx.moveTo(px(speed), y)
+      else ctx.lineTo(px(speed), y)
+    }
+    ctx.strokeStyle = colors.curve
+    ctx.lineWidth = 2
+    ctx.setLineDash([6, 4])
+    ctx.stroke()
+    ctx.setLineDash([])
+  }
 }
 
 // Aim-down-sights curve: same units, its own bytes. Smoothing is shared.

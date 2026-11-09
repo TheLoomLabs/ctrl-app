@@ -677,13 +677,19 @@ Copyright (C) 2023, Input Labs Oy.
 
             <div class='block plots gyro-accel-plot'>
                 <canvas class='plot-wide' height='160' width='320' #_canvasGyroAccel></canvas>
-                <div class='plot-legend'>Gain vs. controller rotation speed (deg/s). Shaded: beyond sensor range.</div>
+                <div class='plot-legend'>
+                    Gain vs. controller rotation speed (deg/s). Shaded: beyond sensor range.
+                    <ng-container *ngIf='accelVerticalPercent(gyro) < 100'>Dashed: vertical.</ng-container>
+                </div>
             </div>
 
             <div class='block accel-examples'>
                 <div class='example' *ngFor='let s of accelExampleSpeeds'>
                     <div class='speed'>{{s}} deg/s</div>
                     <div class='gain'>{{accelGain(gyro, s).toFixed(2)}}x</div>
+                    <div class='gain-vertical' *ngIf='accelVerticalPercent(gyro) < 100'>
+                        vertical {{accelVerticalGain(gyro, s).toFixed(2)}}x
+                    </div>
                 </div>
                 <p class='hint'>
                     A fast flick that used to need 180&deg; of wrist rotation now needs about
@@ -766,6 +772,19 @@ Copyright (C) 2023, Input Labs Oy.
                         [value]='accel.smoothing'
                         (update)='accelSet(gyro, {smoothing: $event})'
                         [unit]="'ms'" [min]='0' [max]='100' [step]='1'
+                    />
+                </div>
+            </div>
+            <div class='block'>
+                <div class='subtitle'>
+                    Vertical acceleration:
+                    <div class='material' (click)='showDialogHelp("gyro-accel-vertical")'>live_help</div>
+                </div>
+                <div class='island'>
+                    <app-input-number
+                        [value]='accelVerticalPercent(gyro)'
+                        (update)='accelSetVerticalPercent(gyro, $event)'
+                        [unit]="'%'" [min]='0' [max]='100' [step]='5'
                     />
                 </div>
             </div>
@@ -1205,6 +1224,19 @@ Copyright (C) 2023, Input Labs Oy.
         <h3>Speed smoothing</h3>
         <p>Time window used to average the rotation speed that drives the gain. It does not delay your movement, only how fast the gain reacts.</p>
         <p>Higher values give a steadier, more predictable gain. Lower values react faster. 8-15 ms is a good range.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-accel-vertical'>
+        <h3>Vertical acceleration</h3>
+        <p>How much of the acceleration boost is applied to vertical (up / down) movement.</p>
+        <p><b>100%:</b> vertical is accelerated like horizontal.</p>
+        <p><b>50%:</b> half of the extra gain. For example with 1x low and 5x high gain, a fast vertical flick gets 3x.</p>
+        <p><b>0%:</b> vertical always uses the low-speed gain, so flicks only boost turning.</p>
+        <p>Big vertical flicks are rarely needed in shooters, so 30-60% keeps fast turns from also throwing the aim up or down. The dashed line in the graph shows the vertical curve.</p>
+        <p>Applies to the aim-down-sights curve too. Base vertical sensitivity is set in Gyro Axis Y.</p>
         <div class='buttons'>
             <button (click)='hideDialogHelp()'>Makes sense</button>
         </div>

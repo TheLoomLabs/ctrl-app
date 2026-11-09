@@ -20,6 +20,7 @@ import { plotCircle, plotRamp, plotRotation } from 'lib/plot'
 import { GyroAccelCurve, GyroAccelParams, curveNames, defaultExponent, presets } from 'lib/gyro_accel'
 import { paramsFromGyro, applyParamsToGyro, gain, plotGyroAccel, GYRO_MAX_SPEED } from 'lib/gyro_accel'
 import { paramsFromGyroAds, applyParamsToGyroAds } from 'lib/gyro_accel'
+import { verticalShare, setVerticalShare, verticalGain } from 'lib/gyro_accel'
 import { CtrlMacro } from 'lib/ctrl'
 import { Macro, MacroMode, MacroOp, MacroStep, RecordedEvent, MACRO_STEPS_MAX } from 'lib/macro'
 import { decodeMacro, encodeMacro, emptyMacro, describeMacro, stepsFromRecording } from 'lib/macro'
@@ -171,6 +172,20 @@ export class SectionComponent {
   accelApplyPreset(gyro: CtrlGyro, index: number) {
     if (index < 0) return
     this.accelSet(gyro, {...presets[index].params})
+  }
+
+  accelVerticalPercent(gyro: CtrlGyro) {
+    return Math.round(verticalShare(gyro) * 100)
+  }
+
+  accelSetVerticalPercent(gyro: CtrlGyro, percent: number) {
+    setVerticalShare(gyro, Number(percent) / 100)
+    this.save()
+    this.plot()
+  }
+
+  accelVerticalGain(gyro: CtrlGyro, speed: number) {
+    return verticalGain(paramsFromGyro(gyro), speed, verticalShare(gyro))
   }
 
   accelGain(gyro: CtrlGyro, speed: number) {
@@ -541,7 +556,7 @@ export class SectionComponent {
         marker: this.purple,
         grid: 'hsl(0deg, 0%, 20%)',
         text: 'hsl(0deg, 0%, 55%)',
-      })
+      }, verticalShare(this.section))
     }
   }
 

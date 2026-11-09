@@ -688,6 +688,8 @@ export class CtrlGyro extends CtrlSection {
     public smooth_threshold = 0,
     public smooth_time = 0,
     public space = 0,
+    // Vertical acceleration (fork extension): % of the boost removed on pitch.
+    public accel_vertical_cut = 0,
   ) {
     super(1, DeviceId.ALPAKKA, MessageType.SECTION_SHARE)
   }
@@ -706,7 +708,7 @@ export class CtrlGyro extends CtrlSection {
       data[12],  // Accel speed max.
       data[13],  // Accel exponent.
       data[14],  // Accel smoothing.
-      ...data.slice(15, 27),  // ADS (8 bytes), stabilization and space (4 bytes).
+      ...data.slice(15, 28),  // ADS (8), stabilization and space (4), vertical accel (1).
     )
   }
 
@@ -735,6 +737,7 @@ export class CtrlGyro extends CtrlSection {
       this.smooth_threshold,
       this.smooth_time,
       Number(this.space),
+      this.accel_vertical_cut,
     ]
   }
 }

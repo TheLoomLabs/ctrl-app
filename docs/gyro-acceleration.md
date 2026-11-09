@@ -51,6 +51,7 @@ All acceleration settings are **per profile**, in the app under
 | **Full gain at** | Speed where the high-speed gain is reached. | 250 – 450 °/s |
 | **Curve shape** | How the gain rises between the two speeds (meaning depends on the curve). | see section 3 |
 | **Speed smoothing** | Averages the measured speed over this time, so the gain does not jitter. Does **not** delay your movement, only how quickly the gain reacts. | 8 – 15 ms |
+| **Vertical acceleration** | How much of the boost applies to up / down movement. 100% = same as horizontal, 0% = vertical always uses the low-speed gain. | 30 – 60% |
 
 The app shows a live **graph** (gain vs. speed), the gain at four example
 speeds, and an estimate of how much wrist rotation a fast flick needs for 180°.
@@ -63,6 +64,8 @@ For readers who like the exact math:
 t    = (speed − start) / (full − start), clamped to 0…1
 gain = low + (high − low) × shape(t)
 output = gyro × DPI × axis sensitivity × gain
+
+vertical gain = low + (gain − low) × vertical acceleration
 ```
 
 `shape(t)` depends on the curve (next section). The same math runs in the
@@ -153,6 +156,7 @@ clear boost only for deliberate flicks:
 | Full gain at | 320 °/s |
 | Curve shape | 10 |
 | Speed smoothing | 10 ms |
+| Vertical acceleration | 50% |
 
 If you already like **Flick turns**, keep it. Switch to Sigmoid flick if you
 notice inconsistent tracking, e.g. over- or undershooting a running enemy.
@@ -191,6 +195,8 @@ Change **one value at a time** and test in game after each change.
    - Want a sharper split between aim and flick → raise it.
 7. **Gain jitters during flicks → Speed smoothing** up to 15 ms. If the boost
    feels late, go down to 5–8 ms.
+8. **Flick turns throw the aim up or down → Vertical acceleration.** Lower it
+   (e.g. 100 → 50%). Use 0% if you never need fast vertical flicks.
 
 ---
 
@@ -204,6 +210,7 @@ Change **one value at a time** and test in game after each change.
 | Overshoot on quick re-aims (100–200 °/s) | Boost starts too early | Raise *starts at* and *full gain at* |
 | Scoped aim too fast | Acceleration active while aiming | Set an aim-down-sights button with acceleration Off |
 | Small shaking when holding still | Hand tremor, not acceleration | Use smoothing (5 °/s) and tightening (1–3 °/s) |
+| Fast turns also jerk the camera up or down | Vertical gets the full boost | Lower *vertical acceleration* (30 – 60%) |
 | Very fast flicks don't turn further than fast ones | Sensor limit (~570 °/s) | Expected; raise high-speed gain instead of flicking harder |
 
 ---
@@ -213,7 +220,8 @@ Change **one value at a time** and test in game after each change.
 - Settings are stored per profile in the controller; switching profiles switches
   acceleration too. Profiles without acceleration behave exactly like stock.
 - Speed is computed from the gyro axes that are mapped in the profile, as one
-  combined rotation speed, so horizontal and vertical movements share one gain.
+  combined rotation speed, so horizontal and vertical movements share one gain
+  (the vertical axis gets the share set by *vertical acceleration*).
 - The gain is applied after the DPI and per-axis sensitivity; changing DPI
   scales everything, acceleration included.
 - While the gyro is disengaged (touch modes), the speed and filters reset, so
