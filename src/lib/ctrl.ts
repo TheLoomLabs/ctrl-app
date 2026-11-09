@@ -108,6 +108,9 @@ export enum SectionIndex {
   MACRO_2,
   MACRO_3,
   MACRO_4,
+  // Fork extension: macro names (sections unused by stock firmware).
+  MACRO_NAMES_1 = 62,
+  MACRO_NAMES_2 = 63,
   HOME = 100,
 }
 
@@ -181,6 +184,10 @@ export function sectionIsMacro(section: SectionIndex) {
   return section >= SectionIndex.MACRO_1 && section <= SectionIndex.MACRO_4
 }
 
+export function sectionIsMacroNames(section: SectionIndex) {
+  return section == SectionIndex.MACRO_NAMES_1 || section == SectionIndex.MACRO_NAMES_2
+}
+
 export function sectionIsHome(section: SectionIndex) {
   return section == SectionIndex.HOME
 }
@@ -238,6 +245,7 @@ export class Ctrl {
       else if (sectionIsGyro(section)) return CtrlGyro.decode(buffer)
       else if (sectionIsGyroAxis(section)) return CtrlGyroAxis.decode(buffer)
       else if (sectionIsMacro(section)) return CtrlMacro.decode(buffer)
+      else if (sectionIsMacroNames(section)) return CtrlMacroNames.decode(buffer)
       else return CtrlButton.decode(buffer)
     }
     return false
@@ -848,6 +856,36 @@ export class CtrlMacro extends CtrlSection {
       ...this.macros[0],
       ...this.macros[1],
       ...this.formats,
+    ]
+  }
+}
+
+export const MACRO_NAME_BYTES = 14
+
+// Names for 4 macros per section (fork extension).
+export class CtrlMacroNames extends CtrlSection {
+  constructor(
+    public override profileIndex: number,
+    public override sectionIndex: SectionIndex,
+    public names: string[] = ['', '', '', ''],
+  ) {
+    super(1, DeviceId.ALPAKKA, MessageType.SECTION_SHARE)
+  }
+
+  static override decode(buffer: Uint8Array) {
+    const data = Array.from(buffer)
+    const names = [0, 1, 2, 3].map((i) => {
+      const start = 6 + i * MACRO_NAME_BYTES
+      return string_from_slice(buffer, start, start + MACRO_NAME_BYTES)
+    })
+    return new CtrlMacroNames(data[4], data[5], names)
+  }
+
+  override payload() {
+    return [
+      this.profileIndex,
+      this.sectionIndex,
+      ...this.names.flatMap((name) => Array.from(string_to_buffer(MACRO_NAME_BYTES, name))),
     ]
   }
 }

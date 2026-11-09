@@ -161,7 +161,7 @@
             </div> -->
             <div class='key' [ngClass]='pickCls(HID.PROC_MACRO_1 + pickerMacro - 1)'>
                 <span class='prevnext' (click)='pickMacro(-1)'>⏴</span>
-                <span (click)='pickMacro()'>MACRO {{pickerMacro}}</span>
+                <span (click)='pickMacro()'>MACRO {{pickerMacro}}<ng-container *ngIf='macroName(pickerMacro)'>: {{macroName(pickerMacro)}}</ng-container></span>
                 <span class='prevnext' (click)='pickMacro(+1)'>⏵</span>
             </div>
             <div class='key' [ngClass]='pickCls(HID.PROC_TUNE_OS + pickerTune)'>

@@ -2,7 +2,7 @@
 // Copyright (C) 2023, Input Labs Oy.
 
 import { CtrlSectionMeta, CtrlButton, CtrlRotary, CtrlThumbstick, ButtonMode } from 'lib/ctrl'
-import { SectionIndex, CtrlGyro, CtrlGyroAxis, CtrlHome, CtrlMacro } from 'lib/ctrl'
+import { SectionIndex, CtrlGyro, CtrlGyroAxis, CtrlHome, CtrlMacro, CtrlMacroNames } from 'lib/ctrl'
 import { ActionGroup } from 'lib/actions'
 import { HID } from 'lib/hid'
 
@@ -71,6 +71,8 @@ export class Profile {
     public macro2: CtrlMacro = new CtrlMacro(0, SectionIndex.MACRO_2),
     public macro3: CtrlMacro = new CtrlMacro(0, SectionIndex.MACRO_3),
     public macro4: CtrlMacro = new CtrlMacro(0, SectionIndex.MACRO_4),
+    public macroNames1: CtrlMacroNames = new CtrlMacroNames(0, SectionIndex.MACRO_NAMES_1),
+    public macroNames2: CtrlMacroNames = new CtrlMacroNames(0, SectionIndex.MACRO_NAMES_2),
   ) {
     // Fake home definitions.
     const actions = [
@@ -91,6 +93,12 @@ export class Profile {
   getSections() {
     return Object.values(this)
       .filter((value) => value.sectionIndex!=SectionIndex.HOME)
+  }
+
+  // Macro name for index 0-7 (fork extension).
+  macroName(index: number) {
+    const section = index < 4 ? this.macroNames1 : this.macroNames2
+    return section.names[index % 4] || ''
   }
 
   thumbstickHasAxis(thumbstick: CtrlThumbstick, isAxisFunc: (x:HID)=>boolean) {

@@ -8,6 +8,7 @@ import { CtrlThumbstick, CtrlGyro, CtrlGyroAxis, CtrlHome } from 'lib/ctrl'
 import { sectionIsAnalog } from 'lib/ctrl'
 import { ActionGroup } from 'lib/actions'
 import { HID, isAxis } from 'lib/hid'
+import { WebusbService } from 'services/webusb'
 
 @Component({
   selector: 'app-mapper',
@@ -31,7 +32,13 @@ export class MapperComponent {
   pickerTune = 0
   HID = HID
 
-  constructor() {}
+  constructor(public webusb: WebusbService) {}
+
+  macroName(n: number) {
+    const profiles = this.webusb.getProfiles()
+    if (!profiles) return ''
+    return profiles.profiles[this.section.profileIndex]?.macroName(n - 1) || ''
+  }
 
   sectionIsMeta = () => this.section instanceof CtrlSectionMeta
   sectionIsButton = () => this.section instanceof CtrlButton && !(this.section instanceof CtrlHome)

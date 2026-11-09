@@ -3,7 +3,7 @@
 
 /// <reference types="w3c-web-usb" />
 
-import { MessageType, SectionIndex, CtrlGyro, CtrlGyroAxis, CtrlMacro } from 'lib/ctrl'
+import { MessageType, SectionIndex, CtrlGyro, CtrlGyroAxis, CtrlMacro, CtrlMacroNames } from 'lib/ctrl'
 import { Device } from 'lib/device'
 import { Profile } from 'lib/profile'
 import {
@@ -123,6 +123,8 @@ export class Profiles {
     profile.macro2 = await this.device.tryGetSection(profileIndex, SectionIndex.MACRO_2) as CtrlMacro
     profile.macro3 = await this.device.tryGetSection(profileIndex, SectionIndex.MACRO_3) as CtrlMacro
     profile.macro4 = await this.device.tryGetSection(profileIndex, SectionIndex.MACRO_4) as CtrlMacro
+    profile.macroNames1 = await this.device.tryGetSection(profileIndex, SectionIndex.MACRO_NAMES_1) as CtrlMacroNames
+    profile.macroNames2 = await this.device.tryGetSection(profileIndex, SectionIndex.MACRO_NAMES_2) as CtrlMacroNames
   }
 
   getProfile(profileIndex: number) {

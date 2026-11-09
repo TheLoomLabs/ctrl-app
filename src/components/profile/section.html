@@ -916,7 +916,7 @@ Copyright (C) 2023, Input Labs Oy.
             [class.active]='macroIndex==i'
             (click)='macroSelect(i)'
             >
-            <div class='num'>M{{i+1}}</div>
+            <div class='num'>M{{i+1}}<span class='name' *ngIf='macroName(i)'>: {{macroName(i)}}</span></div>
             <div class='summary'>{{macroSummary(i)}}</div>
         </div>
     </div>
@@ -925,6 +925,20 @@ Copyright (C) 2023, Input Labs Oy.
         <div class='warning' *ngIf='m.legacy'>
             <span class='material'>info</span>
             This macro uses the old format (keys typed one by one). Editing it converts it to the new format.
+        </div>
+
+        <div class='block'>
+            <div class='subtitle'>Name (shown here and in the button action picker):</div>
+            <input
+                #macroNameInput
+                class='macro-name'
+                type='text'
+                maxlength='14'
+                placeholder='e.g. Rapid fire'
+                [value]='macroName(macroIndex)'
+                (change)='macroSetName(macroIndex, macroNameInput.value)'
+                (keydown.enter)='macroNameInput.blur()'
+            />
         </div>
 
         <div class='block'>

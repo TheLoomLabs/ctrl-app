@@ -200,6 +200,21 @@ export class SectionComponent {
     return [profile.macro1, profile.macro2, profile.macro3, profile.macro4][Math.floor(index / 2)]
   }
 
+  macroName(index: number) {
+    return this.profiles.profiles[this.profileIndex].macroName(index)
+  }
+
+  async macroSetName(index: number, name: string) {
+    const profile = this.profiles.profiles[this.profileIndex]
+    const section = index < 4 ? profile.macroNames1 : profile.macroNames2
+    // Trim to what fits in 14 UTF-8 bytes.
+    let value = name.trim()
+    while (new TextEncoder().encode(value).length > 14) value = value.slice(0, -1)
+    section.names[index % 4] = value
+    section.profileIndex = this.profileIndex
+    await this.webusb.trySetSection(this.profileIndex, section)
+  }
+
   macroSummary(index: number) {
     const section = this.macroSection(index)
     const sub = index % 2
