@@ -646,6 +646,131 @@ Copyright (C) 2023, Input Labs Oy.
             </select>
         </div>
     </div>
+
+    <!-- Gyro acceleration (fork extension). -->
+    <ng-container *ngIf='gyroIsIncremental(gyro) && accelParams(gyro) as accel'>
+        <div class='block'>
+            <div class='subtitle'>
+                Acceleration:
+                <div class='material' (click)='showDialogHelp("gyro-accel")'>live_help</div>
+            </div>
+            <div class='select'>
+                <select
+                    [ngModel]='accel.curve'
+                    (ngModelChange)='accelSetCurve(gyro, +$event)'
+                    >
+                    <option *ngFor='let c of accelCurves' [ngValue]='c'>{{accelCurveNames[c]}}</option>
+                </select>
+            </div>
+        </div>
+
+        <ng-container *ngIf='accel.curve != GyroAccelCurve.OFF'>
+            <div class='block'>
+                <div class='subtitle'>Preset:</div>
+                <div class='select'>
+                    <select #presetSelect (change)='accelApplyPreset(gyro, +presetSelect.value); presetSelect.value="-1"'>
+                        <option value='-1'>Apply a preset...</option>
+                        <option *ngFor='let p of accelPresets; let i = index' [value]='i'>{{p.name}}: {{p.description}}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class='block plots gyro-accel-plot'>
+                <canvas class='plot-wide' height='160' width='320' #_canvasGyroAccel></canvas>
+                <div class='plot-legend'>Gain vs. controller rotation speed (deg/s). Shaded: beyond sensor range.</div>
+            </div>
+
+            <div class='block accel-examples'>
+                <div class='example' *ngFor='let s of accelExampleSpeeds'>
+                    <div class='speed'>{{s}} deg/s</div>
+                    <div class='gain'>{{accelGain(gyro, s).toFixed(2)}}x</div>
+                </div>
+                <p class='hint'>
+                    A fast flick that used to need 180&deg; of wrist rotation now needs about
+                    <b>{{accelFlickDegrees(gyro, 180).toFixed(0)}}&deg;</b>.
+                </p>
+            </div>
+
+            <div class='block'>
+                <div class='subtitle'>
+                    Low-speed gain:
+                    <div class='material' (click)='showDialogHelp("gyro-accel-gain-min")'>live_help</div>
+                </div>
+                <div class='island'>
+                    <app-input-number
+                        [value]='accel.gainMin'
+                        (update)='accelSet(gyro, {gainMin: $event})'
+                        [unit]="'x'" [min]='0.1' [max]='2.5' [step]='0.05' [decimals]='2'
+                    />
+                </div>
+            </div>
+            <div class='block'>
+                <div class='subtitle'>
+                    High-speed gain:
+                    <div class='material' (click)='showDialogHelp("gyro-accel-gain-max")'>live_help</div>
+                </div>
+                <div class='island'>
+                    <app-input-number
+                        [value]='accel.gainMax'
+                        (update)='accelSet(gyro, {gainMax: $event})'
+                        [unit]="'x'" [min]='0.1' [max]='25' [step]='0.1' [decimals]='1'
+                    />
+                </div>
+            </div>
+            <div class='block'>
+                <div class='subtitle'>
+                    Acceleration starts at:
+                    <div class='material' (click)='showDialogHelp("gyro-accel-threshold")'>live_help</div>
+                </div>
+                <div class='island'>
+                    <app-input-number
+                        [value]='accel.threshold'
+                        (update)='accelSet(gyro, {threshold: $event})'
+                        [unit]="'deg/s'" [min]='0' [max]='500' [step]='2'
+                    />
+                </div>
+            </div>
+            <div class='block'>
+                <div class='subtitle'>
+                    Full gain at:
+                    <div class='material' (click)='showDialogHelp("gyro-accel-speed-max")'>live_help</div>
+                </div>
+                <div class='island'>
+                    <app-input-number
+                        [value]='accel.speedMax'
+                        (update)='accelSet(gyro, {speedMax: $event})'
+                        [unit]="'deg/s'" [min]='4' [max]='600' [step]='4'
+                    />
+                </div>
+            </div>
+            <div class='block' *ngIf='accel.curve != GyroAccelCurve.LINEAR'>
+                <div class='subtitle'>
+                    Curve shape:
+                    <div class='material' (click)='showDialogHelp("gyro-accel-exponent")'>live_help</div>
+                </div>
+                <div class='island'>
+                    <app-input-number
+                        [value]='accel.exponent'
+                        (update)='accelSet(gyro, {exponent: $event})'
+                        [unit]="''" [min]='0.1' [max]='25' [step]='0.1' [decimals]='1'
+                    />
+                </div>
+            </div>
+            <div class='block'>
+                <div class='subtitle'>
+                    Speed smoothing:
+                    <div class='material' (click)='showDialogHelp("gyro-accel-smoothing")'>live_help</div>
+                </div>
+                <div class='island'>
+                    <app-input-number
+                        [value]='accel.smoothing'
+                        (update)='accelSet(gyro, {smoothing: $event})'
+                        [unit]="'ms'" [min]='0' [max]='100' [step]='1'
+                    />
+                </div>
+            </div>
+        </ng-container>
+    </ng-container>
 </div>
 
 <!-- GYRO AXIS -->
@@ -776,6 +901,75 @@ Copyright (C) 2023, Input Labs Oy.
         <p><b>Exactly 0:</b> Linear response.</p>
         <p><b>Below 0:</b> A more relaxed curve that requires larger movements to achieve the same results.</p>
         <p><b>Above 0:</b> A more aggressive curve that requires smaller movements to achieve the same results.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-accel'>
+        <h3>Gyro acceleration</h3>
+        <p>Multiplies gyro output based on how fast you rotate the controller. Slow, careful movements stay precise, while fast flicks are amplified so big turns (180 / 360) need only a small wrist snap.</p>
+        <p><b>Linear:</b> gain grows steadily with speed.</p>
+        <p><b>Power:</b> classic mouse acceleration, gentle at first and steeper at high speed.</p>
+        <p><b>Natural:</b> ramps up quickly and eases into the max gain, predictable for most players.</p>
+        <p><b>Sigmoid:</b> S-curve with a clear precision zone, a transition and a flick zone. Recommended for shooters.</p>
+        <p>Settings are stored per profile. The speed is measured in degrees per second of controller rotation, so it feels the same at any polling rate.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-accel-gain-min'>
+        <h3>Low-speed gain</h3>
+        <p>Multiplier applied to slow movements (below the start speed).</p>
+        <p><b>1.00x:</b> Same as no acceleration, recommended.</p>
+        <p><b>Below 1.00x:</b> Extra precision for micro-aim. Raise the global DPI to compensate.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-accel-gain-max'>
+        <h3>High-speed gain</h3>
+        <p>Multiplier applied to fast flicks (at or above the full gain speed).</p>
+        <p>For example 4.0x means a 45&deg; wrist flick turns you as much as a 180&deg; one would without acceleration.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-accel-threshold'>
+        <h3>Acceleration starts at</h3>
+        <p>Rotation speed (degrees per second) where acceleration begins. Below it, the low-speed gain is used.</p>
+        <p>Normal aiming and tracking is usually below 30-80 deg/s.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-accel-speed-max'>
+        <h3>Full gain at</h3>
+        <p>Rotation speed where the high-speed gain is reached.</p>
+        <p>The gyro sensor saturates at around 570 deg/s, so values beyond that are never reached.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-accel-exponent'>
+        <h3>Curve shape</h3>
+        <p><b>Power:</b> the exponent. 1 is linear, 2 is quadratic, higher is steeper at the top.</p>
+        <p><b>Natural:</b> how fast it ramps up. Higher values reach the max gain earlier.</p>
+        <p><b>Sigmoid:</b> steepness of the transition. Higher values give a sharper switch between precise and flick zones.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-accel-smoothing'>
+        <h3>Speed smoothing</h3>
+        <p>Time window used to average the rotation speed that drives the gain. It does not delay your movement, only how fast the gain reacts.</p>
+        <p>Higher values give a steadier, more predictable gain. Lower values react faster. 8-15 ms is a good range.</p>
         <div class='buttons'>
             <button (click)='hideDialogHelp()'>Makes sense</button>
         </div>

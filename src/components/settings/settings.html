@@ -8,6 +8,21 @@ Copyright (C) 2023, Input Labs Oy.
 
     <div class='setting'>
         <div class='text'>
+            <div class='name'>Polling rate</div>
+            <div class='desc'>USB only</div>
+            <div class='material' (click)='showDialogHelp("pollingRate")'>live_help</div>
+        </div>
+        <select
+            class='polling-rate'
+            [value]='pollingRate'
+            (change)='pollingRate=+$any($event.target).value; savePollingRate()'
+            >
+            <option *ngFor='let r of pollingRates' [value]='r.index' [selected]='r.index==pollingRate'>{{r.label}}</option>
+        </select>
+    </div>
+
+    <div class='setting'>
+        <div class='text'>
             <div class='name'>Long calibration</div>
             <div class='desc'>4x longer</div>
             <div class='material' (click)='showDialogHelp("longCalibration")'>live_help</div>

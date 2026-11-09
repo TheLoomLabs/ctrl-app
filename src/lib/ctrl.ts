@@ -42,6 +42,7 @@ export enum ConfigIndex {
   TOUCH_INVERT_POLARITY,
   GYRO_USER_OFFSET,
   THUMBSTICK_SMOOTH_SAMPLES,
+  POLLING_RATE,
 }
 
 export enum SectionIndex {
@@ -652,6 +653,14 @@ export class CtrlGyro extends CtrlSection {
     public override sectionIndex: SectionIndex,
     public mode: GyroMode,
     public engage: number,
+    // Gyro acceleration (fork extension), raw bytes. See lib/gyro_accel.ts.
+    public accel_curve = 0,
+    public accel_gain_min = 0,
+    public accel_gain_max = 0,
+    public accel_threshold = 0,
+    public accel_speed_max = 0,
+    public accel_exponent = 0,
+    public accel_smoothing = 0,
   ) {
     super(1, DeviceId.ALPAKKA, MessageType.SECTION_SHARE)
   }
@@ -663,6 +672,13 @@ export class CtrlGyro extends CtrlSection {
       data[5],  // SectionIndex.
       data[6],  // Gyro mode.
       data[7],  // Engage button.
+      data[8],  // Accel curve.
+      data[9],  // Accel gain min.
+      data[10],  // Accel gain max.
+      data[11],  // Accel threshold.
+      data[12],  // Accel speed max.
+      data[13],  // Accel exponent.
+      data[14],  // Accel smoothing.
     )
   }
 
@@ -672,6 +688,13 @@ export class CtrlGyro extends CtrlSection {
       this.sectionIndex,
       Number(this.mode),
       Number(this.engage),
+      Number(this.accel_curve),
+      this.accel_gain_min,
+      this.accel_gain_max,
+      this.accel_threshold,
+      this.accel_speed_max,
+      this.accel_exponent,
+      this.accel_smoothing,
     ]
   }
 }

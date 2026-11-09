@@ -17,6 +17,8 @@ import { HID, isAxis, isMouseAxis, isScrollAxis, isGamepadAxis } from 'lib/hid'
 import { PinV0, PinV1 } from 'lib/pin'
 import { delay } from 'lib/delay'
 import { plotCircle, plotRamp, plotRotation } from 'lib/plot'
+import { GyroAccelCurve, GyroAccelParams, curveNames, defaultExponent, presets } from 'lib/gyro_accel'
+import { paramsFromGyro, applyParamsToGyro, gain, plotGyroAccel, GYRO_MAX_SPEED } from 'lib/gyro_accel'
 
 @Component({
   selector: 'app-section',
@@ -52,6 +54,14 @@ export class SectionComponent {
   canvasCircle!: ElementRef<HTMLCanvasElement>
   canvasRamp!: ElementRef<HTMLCanvasElement>
   canvasRotation!: ElementRef<HTMLCanvasElement>
+  canvasGyroAccel!: ElementRef<HTMLCanvasElement>
+
+  // Gyro acceleration.
+  GyroAccelCurve = GyroAccelCurve
+  accelCurves = Object.values(GyroAccelCurve).filter((v) => typeof v === 'number') as GyroAccelCurve[]
+  accelCurveNames = curveNames
+  accelPresets = presets
+  accelExampleSpeeds = [30, 150, 300, 500]
   green = 'hsl(160deg, 100%, 50%)'
   purple = 'hsl(266deg, 100%, 50%)'
 
@@ -100,6 +110,54 @@ export class SectionComponent {
     if (!canvas) return
     this.canvasRotation = canvas
     this.plot()
+  }
+
+  @ViewChild('_canvasGyroAccel') set _canvasGyroAccel(canvas: ElementRef<HTMLCanvasElement>) {
+    if (!canvas) return
+    this.canvasGyroAccel = canvas
+    this.plot()
+  }
+
+  gyroIsIncremental(gyro: CtrlGyro) {
+    const mode = Number(gyro.mode)
+    return mode != GyroMode.OFF && mode != GyroMode.AXIS_ABSOLUTE
+  }
+
+  accelParams(gyro: CtrlGyro): GyroAccelParams {
+    return paramsFromGyro(gyro)
+  }
+
+  accelSet(gyro: CtrlGyro, patch: Partial<GyroAccelParams>) {
+    const params = {...paramsFromGyro(gyro), ...patch}
+    applyParamsToGyro(gyro, params)
+    this.save()
+    this.plot()
+  }
+
+  accelSetCurve(gyro: CtrlGyro, curve: GyroAccelCurve) {
+    const current = paramsFromGyro(gyro)
+    if (current.curve == GyroAccelCurve.OFF && curve != GyroAccelCurve.OFF && current.speedMax == 0) {
+      // First time enabled: start from the balanced preset values.
+      const base = presets[1].params
+      this.accelSet(gyro, {...base, curve, exponent: defaultExponent[curve]})
+      return
+    }
+    this.accelSet(gyro, {curve, exponent: defaultExponent[curve] || current.exponent})
+  }
+
+  accelApplyPreset(gyro: CtrlGyro, index: number) {
+    if (index < 0) return
+    this.accelSet(gyro, {...presets[index].params})
+  }
+
+  accelGain(gyro: CtrlGyro, speed: number) {
+    return gain(paramsFromGyro(gyro), speed)
+  }
+
+  // How many degrees of wrist rotation a fast flick needs for a 180 turn,
+  // compared to the same turn without acceleration.
+  accelFlickDegrees(gyro: CtrlGyro, turn: number) {
+    return turn / gain(paramsFromGyro(gyro), Math.min(400, GYRO_MAX_SPEED))
   }
 
   getSectionTitle() {
@@ -254,6 +312,14 @@ export class SectionComponent {
     plotCircle(this)
     plotRamp(this)
     plotRotation(this)
+    if (this.canvasGyroAccel && this.section instanceof CtrlGyro) {
+      plotGyroAccel(this.canvasGyroAccel.nativeElement, paramsFromGyro(this.section), {
+        curve: this.green,
+        marker: this.purple,
+        grid: 'hsl(0deg, 0%, 20%)',
+        text: 'hsl(0deg, 0%, 55%)',
+      })
+    }
   }
 
   // Colors in the sidebar action selector.

@@ -28,6 +28,8 @@ export class SettingsComponent {
   gyroUserOffsetY = 0
   gyroUserOffsetZ = 0
   thumbstickSmoothSamples = 0;
+  pollingRate = 0;  // 0=250Hz, 1=500Hz, 2=1000Hz (fork extension).
+  pollingRates = [{index: 0, label: '250 Hz (stock)'}, {index: 1, label: '500 Hz'}, {index: 2, label: '1000 Hz'}]
   dialogHelp: any
   helpTitle = 'Title'
   helpText = 'Text'
@@ -57,6 +59,7 @@ export class SettingsComponent {
     if (this.gyroUserOffsetY > 127) this.gyroUserOffsetY -= 256
     if (this.gyroUserOffsetZ > 127) this.gyroUserOffsetZ -= 256
     this.thumbstickSmoothSamples = await getConfig(ConfigIndex.THUMBSTICK_SMOOTH_SAMPLES)
+    this.pollingRate = await getConfig(ConfigIndex.POLLING_RATE)
   }
 
   async saveLongCalibration() {
@@ -83,14 +86,26 @@ export class SettingsComponent {
     await this.webusb.trySetConfig(ConfigIndex.THUMBSTICK_SMOOTH_SAMPLES, +this.thumbstickSmoothSamples, [])
   }
 
+  async savePollingRate() {
+    await this.webusb.trySetConfig(ConfigIndex.POLLING_RATE, +this.pollingRate, [])
+  }
+
   showDialogHelp(key: string) {
     const titles: {[key: string]: string} = {
       longCalibration: "Long calibration",
       swapGyros: "Swap gyros",
       invertTouchPolarity: "Invert touch polarity",
       gyroUserOffset: "Gyro calibration tweak",
+      pollingRate: "Polling rate",
     }
     const texts: {[key: string]: string} = {
+      pollingRate:
+        `How many times per second the controller reads its sensors and reports to the computer
+        when connected by USB. Higher rates lower input latency and make gyro aiming smoother on
+        high refresh rate monitors.<br><br>
+        Sensitivity and smoothing are normalized, so aiming feels the same at any rate.<br><br>
+        Wireless mode always uses 250 Hz.<br><br>
+        If the controller misbehaves at 1000 Hz, go back to 500 Hz.`,
       longCalibration:
         `In some cases the drift could be changing direction so slowly that a normal calibration is
         not able to capture it completely. A longer calibration will do a better job

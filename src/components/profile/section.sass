@@ -162,6 +162,40 @@
             &:first-child
                 margin-right: 10px
 
+    .gyro-accel-plot
+        flex-direction: column
+        .plot-wide
+            width: 100%
+            height: auto
+            background: black
+            border-radius: 10px
+        .plot-legend
+            font-size: 11px
+            color: hsl(0deg, 0%, 50%)
+            margin-top: 4px
+
+    .accel-examples
+        display: flex
+        flex-wrap: wrap
+        gap: 6px
+        .example
+            flex: 1
+            min-width: 70px
+            background: black
+            border-radius: 6px
+            padding: 6px 8px
+            .speed
+                font-size: 11px
+                color: hsl(0deg, 0%, 50%)
+            .gain
+                font-size: 16px
+                font-weight: bold
+                color: $green
+        .hint
+            width: 100%
+            margin: 4px 0 0 0
+            font-size: 13px
+
     .warning
         padding: 12px
         border-radius: 5px
