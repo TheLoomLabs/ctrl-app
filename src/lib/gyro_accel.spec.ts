@@ -165,15 +165,15 @@ describe('gyro acceleration', () => {
 
   describe('CtrlGyro message', () => {
     it('places every field at its documented byte and decodes back', () => {
-      // Values 1..24 so a shifted field is detected.
-      const fields = Array.from({length: 24}, (_, i) => i + 1)
+      // Values 1..27 so a shifted field is detected.
+      const fields = Array.from({length: 27}, (_, i) => i + 1)
       const gyro = new CtrlGyro(
         ...(fields as [number, number, number, number, ...number[]]),
       )
       const data = gyro.encode()
-      // Payload starts at byte 4: profile, section, then CtrlGyro bytes 0-21.
-      expect(Array.from(data.slice(4, 28))).toEqual(fields)
-      expect(data[3]).toBe(24)
+      // Payload starts at byte 4: profile, section, then CtrlGyro bytes 0-24.
+      expect(Array.from(data.slice(4, 31))).toEqual(fields)
+      expect(data[3]).toBe(27)
       // Section byte must route to CtrlGyro, so use the real index.
       data[5] = SectionIndex.GYRO_SETTINGS
       const decoded = Ctrl.decode(data) as CtrlGyro

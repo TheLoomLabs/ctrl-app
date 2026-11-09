@@ -790,6 +790,53 @@ Copyright (C) 2023, Input Labs Oy.
             </div>
         </ng-container>
 
+        <!-- Real-world calibration (fork extension). -->
+        <div class='block'>
+            <div class='subtitle'>
+                Real-world calibration:
+                <div class='material' (click)='showDialogHelp("gyro-real-world")'>live_help</div>
+            </div>
+            <div class='select'>
+                <select [ngModel]='rwEnabled(gyro)' (ngModelChange)='rwSetEnabled(gyro, $event)'>
+                    <option [ngValue]='false'>Off (use global mouse sensitivity)</option>
+                    <option [ngValue]='true'>On (sensitivity in real-world degrees)</option>
+                </select>
+            </div>
+        </div>
+        <ng-container *ngIf='rwEnabled(gyro)'>
+            <div class='block'>
+                <div class='subtitle'>
+                    Counts per 360&deg; in game:
+                </div>
+                <div class='island'>
+                    <app-input-number
+                        [value]='rwCounts(gyro)'
+                        (update)='rwSetCounts(gyro, $event)'
+                        [unit]="''" [min]='RW_COUNTS_MIN' [max]='RW_COUNTS_MAX' [step]='1'
+                    />
+                </div>
+                <button class='calib360-start' (click)='calib360Start(gyro)'>Calibrate in game</button>
+            </div>
+            <div class='block'>
+                <div class='subtitle'>
+                    Ratio (in-game degrees per controller degree):
+                </div>
+                <div class='island'>
+                    <app-input-number
+                        [value]='rwRatio(gyro)'
+                        (update)='rwSetRatio(gyro, $event)'
+                        [unit]="'x'" [min]='0.1' [max]='25.5' [step]='0.1' [decimals]='1'
+                    />
+                </div>
+            </div>
+            <p class='hint rw-hint'>
+                Turning the controller <b>{{rwDegreesFor360(gyro).toFixed(0)}}&deg;</b> makes a full
+                360&deg; turn in game (before acceleration). The global mouse sensitivity does not
+                apply to this profile.
+            </p>
+            <p class='hint rw-hint' *ngIf='calib360Message'>{{calib360Message}}</p>
+        </ng-container>
+
         <!-- Gyro space (fork extension). -->
         <div class='block'>
             <div class='subtitle'>
@@ -1239,6 +1286,41 @@ Copyright (C) 2023, Input Labs Oy.
         <p>Applies to the aim-down-sights curve too. Base vertical sensitivity is set in Gyro Axis Y.</p>
         <div class='buttons'>
             <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-help-gyro-real-world'>
+        <h3>Real-world calibration</h3>
+        <p>Sets gyro sensitivity in real degrees instead of an abstract number, so it feels the same in every game.</p>
+        <p><b>Counts per 360&deg;:</b> how many mouse counts this game needs for a full turn. It depends on the game and its in-game sensitivity. Measure it with <b>Calibrate in game</b>.</p>
+        <p><b>Ratio:</b> how many degrees you turn in game per degree you turn the controller. 1.0 is natural (90&deg; on the controller is 90&deg; in game). Most players like 2 to 3. Use the same ratio in all your game profiles and they all feel identical.</p>
+        <p>Acceleration, vertical acceleration and aim-down-sights apply on top: at 1x gain you get exactly the ratio.</p>
+        <p>Keep the in-game sensitivity the same after calibrating; if you change it, calibrate again.</p>
+        <div class='buttons'>
+            <button (click)='hideDialogHelp()'>Makes sense</button>
+        </div>
+    </dialog>
+
+    <dialog id='dialog-calib360'>
+        <h3>Calibrate in game</h3>
+        <ng-container *ngIf='calib360'>
+            <p>The controller is in calibration mode: normal input is paused.</p>
+            <ol>
+                <li>Switch to the game (Alt+Tab) and stand still, looking at a landmark.</li>
+                <li>Press <b>R2</b>: the camera turns by the current count.</li>
+                <li>Adjust until it ends exactly on the landmark after one full turn:
+                    <b>D-pad &rarr; / &larr;</b> = +1% / &minus;1%,
+                    <b>D-pad &uarr; / &darr;</b> = +0.1% / &minus;0.1%.</li>
+                <li>Come back here and press <b>Save</b>. <b>Home</b> on the controller cancels.</li>
+            </ol>
+            <p>Turns too little: increase. Turns too far: decrease.</p>
+            <p class='calib360-counts'>Counts per 360&deg;: <b>{{calib360.counts}}</b></p>
+            <p *ngIf='calib360.cancelled' class='warning'>Calibration was cancelled on the controller. Save keeps the last value.</p>
+            <p>Tip: turn off mouse acceleration in the game (Windows pointer settings do not affect most games).</p>
+        </ng-container>
+        <div class='buttons'>
+            <button (click)='calib360Finish(false)'>Cancel</button>
+            <button (click)='calib360Finish(true)'>Save</button>
         </div>
     </dialog>
 

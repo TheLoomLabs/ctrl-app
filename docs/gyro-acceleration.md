@@ -71,6 +71,25 @@ vertical gain = low + (gain − low) × vertical acceleration
 `shape(t)` depends on the curve (next section). The same math runs in the
 firmware and in the app graph, so the graph is exactly what the controller does.
 
+### Real-world calibration (optional)
+
+By default, gyro speed comes from the global *mouse sensitivity*, so the same
+setting feels different in every game. With **Real-world calibration** (Gyro
+settings, per profile) you set sensitivity in real degrees instead:
+
+- **Counts per 360°**: how many mouse counts the game needs for a full turn at
+  your in-game sensitivity. Measure it with **Calibrate in game**: switch to the
+  game, press **R2** to turn, adjust with the **D-pad** (→ / ← ±1%,
+  ↑ / ↓ ±0.1%) until one turn ends exactly where it started, then **Save** in
+  the app. **Home** cancels.
+- **Ratio**: in-game degrees per controller degree. 1.0 = natural, 2 – 3 is
+  common. The first calibration picks the ratio that matches your current feel.
+
+Use the same ratio in every game profile and every game feels the same.
+Acceleration multiplies on top: at 1× gain you get exactly the ratio, so
+`turn = controller rotation × ratio × gain`. Re-calibrate if you change the
+in-game sensitivity.
+
 ---
 
 ## 3. The curves

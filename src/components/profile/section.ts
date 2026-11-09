@@ -22,6 +22,8 @@ import { paramsFromGyro, applyParamsToGyro, gain, plotGyroAccel, GYRO_MAX_SPEED 
 import { paramsFromGyroAds, applyParamsToGyroAds } from 'lib/gyro_accel'
 import { verticalShare, setVerticalShare, verticalGain } from 'lib/gyro_accel'
 import { CtrlMacro } from 'lib/ctrl'
+import { rwCounts, rwEnabled, rwRatio, setRwCounts, setRwRatio, equivalentRatio } from 'lib/real_world'
+import { controllerDegreesFor360, RW_COUNTS_DEFAULT, RW_COUNTS_MIN, RW_COUNTS_MAX } from 'lib/real_world'
 import { Macro, MacroMode, MacroOp, MacroStep, RecordedEvent, MACRO_STEPS_MAX } from 'lib/macro'
 import { decodeMacro, encodeMacro, emptyMacro, describeMacro, stepsFromRecording } from 'lib/macro'
 import { macroModeNames, macroOpNames, delayOptions, playableActions, snapDelay } from 'lib/macro'
@@ -208,6 +210,113 @@ export class SectionComponent {
 
   ngOnDestroy() {
     this.macroStopRecording(false)
+    if (this.calib360) this.calib360Finish(false)
+  }
+
+  // Real-world calibration.
+  rwEnabled = rwEnabled
+  rwCounts = rwCounts
+  rwRatio = rwRatio
+  RW_COUNTS_MIN = RW_COUNTS_MIN
+  RW_COUNTS_MAX = RW_COUNTS_MAX
+  calib360: Calib360State | null = null
+  calib360Message = ''
+  private calib360Timer?: number
+  private calib360Busy = false
+
+  rwDegreesFor360(gyro: CtrlGyro) {
+    return controllerDegreesFor360(rwRatio(gyro))
+  }
+
+  async rwSetEnabled(gyro: CtrlGyro, enabled: boolean) {
+    this.calib360Message = ''
+    if (enabled) {
+      // Start with the ratio that feels like the current mouse sensitivity.
+      setRwCounts(gyro, RW_COUNTS_DEFAULT)
+      setRwRatio(gyro, equivalentRatio(RW_COUNTS_DEFAULT, await this.globalMouseSens()))
+    } else {
+      setRwCounts(gyro, 0)
+      gyro.rw_ratio = 0
+    }
+    this.save()
+  }
+
+  rwSetCounts(gyro: CtrlGyro, counts: number) {
+    setRwCounts(gyro, Number(counts))
+    this.save()
+  }
+
+  rwSetRatio(gyro: CtrlGyro, ratio: number) {
+    setRwRatio(gyro, Number(ratio))
+    this.save()
+  }
+
+  async globalMouseSens() {
+    const config = await this.webusb.tryGetConfig(ConfigIndex.SENS_MOUSE)
+    return (config.values[config.presetIndex] || 10) / 10
+  }
+
+  async calib360Start(gyro: CtrlGyro) {
+    const counts = rwCounts(gyro) || RW_COUNTS_DEFAULT
+    this.calib360 = {gyro, counts, active: true, cancelled: false}
+    this.calib360Message = ''
+    const dialog = document.getElementById('dialog-calib360') as HTMLDialogElement
+    dialog.showModal()
+    await this.webusb.trySetConfig(ConfigIndex.CALIBRATION_360, 1, [counts & 0xFF, counts >> 8])
+    this.calib360Timer = window.setInterval(() => this.calib360Poll(), 500)
+  }
+
+  private async calib360Read() {
+    const config = await this.webusb.tryGetConfig(ConfigIndex.CALIBRATION_360)
+    return {active: !!config.presetIndex, counts: config.values[0] | (config.values[1] << 8)}
+  }
+
+  async calib360Poll() {
+    if (!this.calib360 || this.calib360Busy) return
+    this.calib360Busy = true
+    try {
+      const state = await this.calib360Read()
+      if (!this.calib360) return
+      this.calib360.counts = state.counts
+      if (!state.active) {
+        // Cancelled with Home on the controller.
+        this.calib360.active = false
+        this.calib360.cancelled = true
+        window.clearInterval(this.calib360Timer)
+      }
+    } catch (error) {
+      console.warn(error)
+    } finally {
+      this.calib360Busy = false
+    }
+  }
+
+  async calib360Finish(save: boolean) {
+    window.clearInterval(this.calib360Timer)
+    const state = this.calib360
+    if (!state) return
+    while (this.calib360Busy) await delay(20)
+    if (state.active) {
+      const final = await this.calib360Read()
+      state.counts = final.counts
+      await this.webusb.trySetConfig(ConfigIndex.CALIBRATION_360, 0, [])
+    }
+    const dialog = document.getElementById('dialog-calib360') as HTMLDialogElement | null
+    dialog?.close()
+    this.calib360 = null
+    if (!save) return
+    const gyro = state.gyro
+    if (!rwEnabled(gyro)) {
+      // First calibration: keep the current feel, the user tunes the ratio.
+      setRwRatio(gyro, equivalentRatio(state.counts, await this.globalMouseSens()))
+    }
+    setRwCounts(gyro, state.counts)
+    this.save()
+    this.calib360Message = (
+      `Saved: a 360° turn in this game takes ${state.counts} counts. ` +
+      `Ratio ${rwRatio(gyro).toFixed(1)}: turning the controller ` +
+      `${controllerDegreesFor360(rwRatio(gyro)).toFixed(0)}° makes a full in-game turn.`
+    )
   }
 
   private macroSection(index: number): CtrlMacro {
@@ -638,4 +747,11 @@ const sectionTitles: SectionTitles = {
   [SectionIndex.GYRO_X]:           'Gyro Axis X',
   [SectionIndex.GYRO_Y]:           'Gyro Axis Y',
   [SectionIndex.GYRO_Z]:           'Gyro Axis Z',
+}
+
+interface Calib360State {
+  gyro: CtrlGyro
+  counts: number
+  active: boolean
+  cancelled: boolean
 }
