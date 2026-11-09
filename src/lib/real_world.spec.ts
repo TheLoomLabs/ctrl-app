@@ -2,7 +2,7 @@
 
 import { CtrlGyro, SectionIndex } from 'lib/ctrl'
 import {
-  rwCounts, rwEnabled, setRwCounts, rwRatio, setRwRatio, rwScale,
+  rwCounts, rwEnabled, rwCalibrated, setRwEnabled, setRwCounts, rwRatio, setRwRatio, rwScale,
   equivalentRatio, controllerDegreesFor360, STOCK_COUNTS_PER_DEGREE,
   RW_COUNTS_MIN, RW_COUNTS_MAX,
 } from 'lib/real_world'
@@ -31,7 +31,21 @@ describe('real-world calibration', () => {
     setRwCounts(g, 1e6)
     expect(rwCounts(g)).toBe(RW_COUNTS_MAX)
     setRwCounts(g, 0)
+    expect(rwCalibrated(g)).toBeFalse()
+  })
+
+  it('turning off keeps the calibration', () => {
+    const g = gyro()
+    setRwEnabled(g, true)
+    expect(rwEnabled(g)).withContext('cannot be on before calibrating').toBeFalse()
+    setRwCounts(g, 9000)
+    setRwRatio(g, 2.5)
+    setRwEnabled(g, true)
+    expect(rwEnabled(g)).toBeTrue()
+    setRwEnabled(g, false)
     expect(rwEnabled(g)).toBeFalse()
+    expect(rwCounts(g)).toBe(9000)
+    expect(rwRatio(g)).toBe(2.5)
   })
 
   it('stores the ratio in tenths, zero meaning 1.0', () => {

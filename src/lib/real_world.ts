@@ -19,8 +19,17 @@ export function rwCounts(gyro: CtrlGyro) {
   return gyro.rw_counts_lo | (gyro.rw_counts_hi << 8)
 }
 
-export function rwEnabled(gyro: CtrlGyro) {
+// Calibrated: the game's counts per 360 are known (kept while turned off).
+export function rwCalibrated(gyro: CtrlGyro) {
   return rwCounts(gyro) > 0
+}
+
+export function rwEnabled(gyro: CtrlGyro) {
+  return !!gyro.rw_enabled && rwCalibrated(gyro)
+}
+
+export function setRwEnabled(gyro: CtrlGyro, enabled: boolean) {
+  gyro.rw_enabled = Number(enabled && rwCalibrated(gyro))
 }
 
 export function setRwCounts(gyro: CtrlGyro, counts: number) {

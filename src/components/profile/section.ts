@@ -22,8 +22,8 @@ import { paramsFromGyro, applyParamsToGyro, gain, plotGyroAccel, GYRO_MAX_SPEED 
 import { paramsFromGyroAds, applyParamsToGyroAds } from 'lib/gyro_accel'
 import { verticalShare, setVerticalShare, verticalGain } from 'lib/gyro_accel'
 import { CtrlMacro } from 'lib/ctrl'
-import { rwCounts, rwEnabled, rwRatio, setRwCounts, setRwRatio, equivalentRatio } from 'lib/real_world'
-import { controllerDegreesFor360, RW_COUNTS_DEFAULT, RW_COUNTS_MIN, RW_COUNTS_MAX } from 'lib/real_world'
+import { rwCounts, rwEnabled, rwCalibrated, setRwEnabled, rwRatio, setRwCounts, setRwRatio } from 'lib/real_world'
+import { equivalentRatio, controllerDegreesFor360, RW_COUNTS_DEFAULT, RW_COUNTS_MIN, RW_COUNTS_MAX } from 'lib/real_world'
 import { Macro, MacroMode, MacroOp, MacroStep, RecordedEvent, MACRO_STEPS_MAX } from 'lib/macro'
 import { decodeMacro, encodeMacro, emptyMacro, describeMacro, stepsFromRecording } from 'lib/macro'
 import { macroModeNames, macroOpNames, delayOptions, playableActions, snapDelay } from 'lib/macro'
@@ -215,6 +215,7 @@ export class SectionComponent {
 
   // Real-world calibration.
   rwEnabled = rwEnabled
+  rwCalibrated = rwCalibrated
   rwCounts = rwCounts
   rwRatio = rwRatio
   RW_COUNTS_MIN = RW_COUNTS_MIN
@@ -228,16 +229,17 @@ export class SectionComponent {
     return controllerDegreesFor360(rwRatio(gyro))
   }
 
-  async rwSetEnabled(gyro: CtrlGyro, enabled: boolean) {
+  // Off keeps counts and ratio, so turning it on again needs no calibration.
+  rwSetEnabled(gyro: CtrlGyro, enabled: boolean) {
     this.calib360Message = ''
-    if (enabled) {
-      // Start with the ratio that feels like the current mouse sensitivity.
-      setRwCounts(gyro, RW_COUNTS_DEFAULT)
-      setRwRatio(gyro, equivalentRatio(RW_COUNTS_DEFAULT, await this.globalMouseSens()))
-    } else {
-      setRwCounts(gyro, 0)
-      gyro.rw_ratio = 0
-    }
+    setRwEnabled(gyro, enabled)
+    this.save()
+  }
+
+  // Ratio that feels like the global mouse sensitivity, for this game.
+  async rwMatchMouseSens(gyro: CtrlGyro) {
+    setRwRatio(gyro, equivalentRatio(rwCounts(gyro), await this.globalMouseSens()))
+    this.calib360Message = ''
     this.save()
   }
 
@@ -306,11 +308,13 @@ export class SectionComponent {
     this.calib360 = null
     if (!save) return
     const gyro = state.gyro
-    if (!rwEnabled(gyro)) {
+    if (!rwCalibrated(gyro)) {
       // First calibration: keep the current feel, the user tunes the ratio.
       setRwRatio(gyro, equivalentRatio(state.counts, await this.globalMouseSens()))
     }
+    // Recalibrating keeps the chosen ratio: only the game measurement changes.
     setRwCounts(gyro, state.counts)
+    setRwEnabled(gyro, true)
     this.save()
     this.calib360Message = (
       `Saved: a 360° turn in this game takes ${state.counts} counts. ` +
