@@ -895,7 +895,18 @@ Copyright (C) 2023, Input Labs Oy.
 
 <!-- MACROS (fork extension) -->
 <div *ngIf='sectionIsMacro()'>
-    <h2>Macros</h2>
+  <div class='macro-backdrop' *ngIf='macroExpanded' (click)='macroSetExpanded(false)'></div>
+  <div class='macro-editor' [class.expanded]='macroExpanded'>
+    <div class='macro-header'>
+        <h2>Macros</h2>
+        <span
+            class='material macro-expand'
+            [title]="macroExpanded ? 'Close full view (Esc)' : 'Open full view'"
+            (click)='macroSetExpanded(!macroExpanded)'
+            >
+            {{macroExpanded ? 'close_fullscreen' : 'open_in_full'}}
+        </span>
+    </div>
     <p>Assign a macro to any button with the <b>MACRO</b> key in its action picker. Macros are stored in this profile.</p>
 
     <div class='macro-tabs'>
@@ -980,6 +991,7 @@ Copyright (C) 2023, Input Labs Oy.
             Timing between presses is kept (rounded to supported delays). Press Stop when done.
         </div>
     </ng-container>
+  </div>
 </div>
 
 <!-- GYRO AXIS -->

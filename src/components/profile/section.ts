@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Copyright (C) 2023, Input Labs Oy.
 
-import { Component, Input, ViewChild, ElementRef} from '@angular/core'
+import { Component, Input, ViewChild, ElementRef, HostListener } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { ActionSelectorComponent } from './action_selector'
@@ -79,6 +79,7 @@ export class SectionComponent {
   macroActions = playableActions
   macroStepsMax = MACRO_STEPS_MAX
   macroIndex = 0  // 0-7.
+  macroExpanded = false
   macroEdit: Macro | null = null
   macroRecording = false
   macroRecordEvents: RecordedEvent[] = []
@@ -186,6 +187,7 @@ export class SectionComponent {
 
   ngOnChanges() {
     this.macroEdit = null
+    this.macroExpanded = false
     this.macroStopRecording(false)
   }
 
@@ -211,6 +213,16 @@ export class SectionComponent {
       this.macroEdit = decodeMacro(section.macros[sub], section.formats[sub])
     }
     return this.macroEdit
+  }
+
+  macroSetExpanded(value: boolean) {
+    this.macroExpanded = value
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    // While recording, Escape is captured as a macro key instead.
+    if (this.macroExpanded && !this.macroRecording) this.macroExpanded = false
   }
 
   macroSelect(index: number) {
