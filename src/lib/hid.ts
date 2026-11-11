@@ -261,6 +261,7 @@ export enum HID {
   PROC_IGNORE_LED_WARNINGS,
   PROC_SLEEP,
   PROC_PAIR,
+  PROC_GYRO_ADS_TOGGLE,  // Fork extension: aim boost on / off.
 }
 
 export function isMouseAxis(action: HID) {
